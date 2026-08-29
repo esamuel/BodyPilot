@@ -1,0 +1,16 @@
+.DS_Store
+
+# Xcode user and build state
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# Swift Package Manager build output
+.build/
+
+# Local assistant and environment configuration
+.agents/
+.codex/
+.env
+.env.*

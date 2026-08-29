@@ -1,0 +1,60 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "BodyPilot"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "BodyPilot"
+          }
+        }
+      }
+    },
+    "NSHealthShareUsageDescription" : {
+      "comment" : "Privacy - Health Share Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "BodyPilot reads your workouts, heart rate, HRV, and sleep to calculate your daily Body Score and readiness. This data stays on your device."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "BodyPilot קורא את נתוני האימונים, קצב הלב, שונות קצב הלב (HRV) והשינה כדי לחשב את ציון הגוף היומי ואת רמת המוכנות. הנתונים האלה נשארים במכשיר שלך."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription" : {
+      "comment" : "Privacy - Health Update Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "BodyPilot saves workouts you complete with the app to Apple Health."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "BodyPilot שומר ב-Apple Health את האימונים שהשלמת באפליקציה."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.3"
+}

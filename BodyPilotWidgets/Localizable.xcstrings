@@ -1,0 +1,86 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld" : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "Body Score" : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "ציון הגוף"
+          }
+        }
+      }
+    },
+    "How today's movement compares with your own pattern." : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "איך התנועה של היום בהשוואה לדפוס האישי שלך."
+          }
+        }
+      }
+    },
+    "Movement" : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "תנועה"
+          }
+        }
+      }
+    },
+    "Open BodyPilot to calculate today's score." : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "יש לפתוח את BodyPilot כדי לחשב את הציון של היום."
+          }
+        }
+      }
+    },
+    "Open BodyPilot to see your movement vs your usual day." : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "יש לפתוח את BodyPilot כדי לראות את התנועה בהשוואה ליום הרגיל אצלך."
+          }
+        }
+      }
+    },
+    "Steps vs Your Usual" : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "צעדים לעומת הרגיל אצלך"
+          }
+        }
+      }
+    },
+    "Today's readiness and recommended session at a glance." : {
+      "localizations" : {
+        "he" : {
+          "stringUnit" : {
+            "state" : "machine_translated",
+            "value" : "רמת המוכנות של היום והאימון המומלץ במבט מהיר."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.3"
+}
