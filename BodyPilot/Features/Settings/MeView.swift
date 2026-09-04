@@ -1,22 +1,22 @@
 import SwiftUI
 import UIKit
 
-/// Profile and settings per PRD 7.11.
-struct MeView: View {
+/// App settings, reached from the Profile sheet. Pushed inside an existing
+/// NavigationStack, so it provides only the list, not its own stack.
+struct SettingsListView: View {
     @State private var isOnboardingPresented = false
 
     var body: some View {
-        NavigationStack {
-            List {
-                MePreferencesSection()
-                MeOnboardingSection(isOnboardingPresented: $isOnboardingPresented)
-                MeNotificationsSection()
-                MeSubscriptionSection()
-                MePrivacySection()
-                MeAboutSection()
-            }
-            .navigationTitle("Me")
+        List {
+            MePreferencesSection()
+            MeOnboardingSection(isOnboardingPresented: $isOnboardingPresented)
+            MeNotificationsSection()
+            MeSubscriptionSection()
+            MePrivacySection()
+            MeAboutSection()
         }
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $isOnboardingPresented) {
             OnboardingView {
                 isOnboardingPresented = false
@@ -314,5 +314,7 @@ private struct OpenAppSettingsButton: View {
 }
 
 #Preview {
-    MeView()
+    NavigationStack {
+        SettingsListView()
+    }
 }

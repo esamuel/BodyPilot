@@ -17,29 +17,48 @@ final class TodayModel {
     private(set) var insights: [InsightSnapshot] = []
     /// Recent workout history backing the Workout Journey page.
     private(set) var recentWorkouts: [WorkoutSummary] = []
+    private(set) var recaps: [RecapSummary] = []
 
     private let readiness: ReadinessService
     private let workoutGenerator: WorkoutGenerator
     private let insightEngine: InsightEngine
+    private let recapEngine: RecapEngine
     private var preferences: ReadinessPreferences = .default
 
     init(
         healthMetrics: any HealthMetricsProviding = HealthKitClient(),
         workoutGenerator: WorkoutGenerator = WorkoutGenerator(),
-        insightEngine: InsightEngine = InsightEngine()
+        insightEngine: InsightEngine = InsightEngine(),
+        recapEngine: RecapEngine = RecapEngine()
     ) {
         self.readiness = ReadinessService(healthMetrics: healthMetrics)
         self.workoutGenerator = workoutGenerator
         self.insightEngine = insightEngine
+        self.recapEngine = recapEngine
     }
 
-    func refresh(checkIn: CheckIn?, profile: UserProfile?, now: Date = .now) async {
+    func refresh(
+        checkIn: CheckIn?,
+        profile: UserProfile?,
+        workoutRPEOverrides: [UUID: Int] = [:],
+        journalEntries: [WorkoutJournalEntry] = [],
+        now: Date = .now
+    ) async {
         preferences = ReadinessPreferences(profile: profile)
+        let journalOverrides = Dictionary(
+            uniqueKeysWithValues: journalEntries.compactMap { entry in
+                entry.perceivedExertion.map { (entry.workoutID, $0) }
+            }
+        )
+        let mergedOverrides = workoutRPEOverrides.merging(journalOverrides) { _, journalValue in
+            journalValue
+        }
         do {
             let snapshot = try await readiness.snapshot(
                 preferences: preferences,
                 feeling: checkIn?.feeling,
                 soreness: checkIn?.soreness ?? [],
+                workoutRPEOverrides: mergedOverrides,
                 now: now
             )
             state = .ready(score: snapshot.score, recommendation: snapshot.recommendation)
@@ -54,6 +73,12 @@ final class TodayModel {
                     feeling: checkIn?.feeling,
                     date: now
                 )
+            )
+            recaps = recapEngine.summaries(
+                snapshots: snapshot.history,
+                workouts: snapshot.workoutHistory,
+                journalEntries: journalEntries,
+                asOf: now
             )
             WidgetSnapshotStore().publish(
                 score: snapshot.score,

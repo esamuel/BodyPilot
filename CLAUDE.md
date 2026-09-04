@@ -599,12 +599,31 @@ Organize:
       SleepInsight/
       MovementInsight/
       RecoveryInsight/
-      HeartInsight/
-      TrainingLoadInsight/
+      CardioFitness/
       StrengthInsight/
       MobilityInsight/
       WorkoutJourney/
       WeeklyReview/
+
+### Cardio Fitness insight
+
+The visible Insights hub includes **Cardio** instead of a Training Load card. Training load remains a deterministic input to Body Score and recommendations; it is not removed from the readiness domain.
+
+Cardio must:
+
+- read through the HealthKit abstraction, never query HealthKit from a View
+- combine normalized data originating from iPhone, Apple Watch, and recorded activities
+- cover resting heart rate, steps, activity duration, walking/running distance, and active energy
+- include VO₂ max in About Cardio Fitness when HealthKit provides an estimate
+- keep missing values missing rather than inventing zeroes
+- aggregate chart points into one average per calendar month
+- show a weighted average line for the selected 12-month or calendar-year period
+- give every selectable metric a stable, distinct semantic color
+- let touch or drag selection snap to a month and reveal its average, month, and year
+- expose available calendar years from the loaded Health history
+- remain descriptive and non-diagnostic; do not classify VO₂ max against population cutoffs
+
+Health history may be queried far enough back to populate year selection, but normalized results stay on device and raw samples must not be persisted.
 
 Do not add new main tabs. Keep:
 

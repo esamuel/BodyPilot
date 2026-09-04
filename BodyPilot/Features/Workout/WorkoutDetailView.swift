@@ -1,10 +1,12 @@
-import SwiftUI
+import PhotosUI
 import SwiftData
+import SwiftUI
 
 /// Shows one generated workout: why it fits today, its steps, and completion.
 struct WorkoutDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var workout: GeneratedWorkout
+    @State private var selectedPhotos: [PhotosPickerItem] = []
 
     var body: some View {
         NavigationStack {
@@ -32,6 +34,10 @@ struct WorkoutDetailView: View {
                         }
                     }
                 }
+                WorkoutJournalSection(
+                    workout: workout,
+                    selectedPhotos: $selectedPhotos
+                )
                 if workout.completedAt == nil {
                     Section("Live tracking") {
                         Label(
@@ -61,6 +67,55 @@ struct WorkoutDetailView: View {
                         dismiss()
                     }
                 }
+            }
+        }
+    }
+}
+
+private struct WorkoutJournalSection: View {
+    @Bindable var workout: GeneratedWorkout
+    @Binding var selectedPhotos: [PhotosPickerItem]
+
+    var body: some View {
+        let photoCount = workout.photoIdentifiers.count
+        Section("Workout Journal") {
+            TextField("Workout name", text: $workout.title)
+
+            VStack(alignment: .leading, spacing: BPSpacing.xSmall) {
+                Text("Notes")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                TextEditor(text: $workout.journalNote)
+                    .frame(minHeight: 90)
+                    .accessibilityLabel("Workout notes")
+            }
+
+            Picker("Effort (RPE)", selection: $workout.perceivedExertion) {
+                Text("Not set").tag(nil as Int?)
+                ForEach(1...10, id: \.self) { value in
+                    Text("\(value)").tag(Optional(value))
+                }
+            }
+
+            Toggle("Favorite", isOn: $workout.isFavorite)
+
+            PhotosPicker(
+                selection: $selectedPhotos,
+                maxSelectionCount: 5,
+                matching: .images
+            ) {
+                Label {
+                    if photoCount == 0 {
+                        Text("Add Photos")
+                    } else {
+                        Text("\(photoCount) photos selected")
+                    }
+                } icon: {
+                    Image(systemName: "photo.on.rectangle.angled")
+                }
+            }
+            .onChange(of: selectedPhotos) { _, items in
+                workout.photoIdentifiers = items.compactMap(\.itemIdentifier)
             }
         }
     }

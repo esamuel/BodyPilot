@@ -40,7 +40,7 @@ struct InsightEngine: Sendable {
             sleepInsight(input),
             movementInsight(input),
             recoveryInsight(input),
-            trainingLoadInsight(input),
+            cardioInsight(input),
             journeyInsight(input),
         ]
     }
@@ -183,8 +183,50 @@ struct InsightEngine: Sendable {
             pattern: patternSeries(series, asOf: input.date),
             action: actionEngine.action(for: .movement, readiness: input.score?.readiness, movementGapSteps: gap),
             confidence: baselineConfidence(baseline),
-            generatedAt: input.date
+            generatedAt: input.date,
+            metrics: movementMetrics(input)
         )
+    }
+
+    /// Stat tiles for the movement page: distance, exercise time, and active
+    /// energy from today's snapshot. Only metrics with data become tiles.
+    private func movementMetrics(_ input: InsightInput) -> [InsightMetric] {
+        guard let today = input.snapshots.first(where: {
+            calendar.isDate($0.date, inSameDayAs: input.date)
+        }) else {
+            return []
+        }
+
+        var metrics: [InsightMetric] = []
+        if let meters = today.walkingRunningDistanceMeters {
+            let distance = Measurement(value: meters, unit: UnitLength.meters)
+                .converted(to: .kilometers)
+                .formatted(.measurement(
+                    width: .abbreviated,
+                    usage: .asProvided,
+                    numberFormatStyle: .number.precision(.fractionLength(0...1))
+                ))
+            metrics.append(InsightMetric(
+                label: String(localized: "Distance"),
+                valueText: distance,
+                systemImage: "point.topleft.down.to.point.bottomright.curvepath"
+            ))
+        }
+        if let minutes = today.exerciseMinutes {
+            metrics.append(InsightMetric(
+                label: String(localized: "Exercise"),
+                valueText: String(localized: "\(Int(minutes.rounded())) min"),
+                systemImage: "figure.walk"
+            ))
+        }
+        if let kilocalories = today.activeEnergyKilocalories {
+            metrics.append(InsightMetric(
+                label: String(localized: "Active Energy"),
+                valueText: String(localized: "\(Int(kilocalories.rounded())) kcal"),
+                systemImage: "flame.fill"
+            ))
+        }
+        return metrics
     }
 
     // MARK: - Recovery
@@ -250,11 +292,154 @@ struct InsightEngine: Sendable {
             pattern: patternSeries(hrvSeries, asOf: input.date),
             action: actionEngine.action(for: .recovery, readiness: readiness),
             confidence: input.score?.confidence ?? 0,
-            generatedAt: input.date
+            generatedAt: input.date,
+            bodyMetrics: recoveryBodyMetrics(input),
+            scoreValue: input.score?.score
         )
     }
 
-    // MARK: - Training Load
+    /// Body-metric cards for the recovery page: resting HR, HRV, and sleep,
+    /// each classified against the personal baseline — never population cutoffs.
+    private func recoveryBodyMetrics(_ input: InsightInput) -> [BodyMetricReading] {
+        [
+            bodyMetric(
+                input,
+                keyPath: \.restingHeartRate,
+                label: String(localized: "Resting Heart Rate"),
+                systemImage: "heart.fill",
+                normalBand: 0.05,
+                lowerIsBetter: true,
+                format: { String(localized: "\(Int($0.rounded())) bpm") }
+            ),
+            bodyMetric(
+                input,
+                keyPath: \.hrvSDNN,
+                label: String(localized: "Heart Rate Variability"),
+                systemImage: "waveform.path.ecg",
+                normalBand: 0.15,
+                lowerIsBetter: false,
+                format: { String(localized: "\(Int($0.rounded())) ms") }
+            ),
+            bodyMetric(
+                input,
+                keyPath: \.sleepHours,
+                label: String(localized: "Sleep"),
+                systemImage: "moon.zzz.fill",
+                normalBand: 0.10,
+                lowerIsBetter: false,
+                format: hoursText
+            ),
+        ]
+    }
+
+    private func bodyMetric(
+        _ input: InsightInput,
+        keyPath: KeyPath<DailyHealthSnapshot, Double?>,
+        label: String,
+        systemImage: String,
+        normalBand: Double,
+        lowerIsBetter: Bool,
+        format: (Double) -> String
+    ) -> BodyMetricReading {
+        let series = dailySeries(input.snapshots, keyPath)
+        let recent = patternSeries(series, asOf: input.date)
+        let latest = todayValue(in: series, date: input.date) ?? recent.last?.value
+        let baseline = baselineEngine.baseline(for: series, window: .primary, asOf: input.date)
+
+        guard let latest else {
+            return BodyMetricReading(
+                label: label,
+                systemImage: systemImage,
+                valueText: "—",
+                status: .unknown,
+                statusText: String(localized: "No recent readings"),
+                recentValues: []
+            )
+        }
+
+        let (status, statusText): (InsightStatus, String) = {
+            guard let baseline, baseline.mean > 0 else {
+                return (.unknown, String(localized: "Learning your normal"))
+            }
+            let deviation = (latest - baseline.mean) / baseline.mean
+            if abs(deviation) <= normalBand {
+                return (.good, String(localized: "Normal for you"))
+            }
+            let isFavorable = (deviation < 0) == lowerIsBetter
+            let direction = deviation > 0
+                ? String(localized: "Above your usual")
+                : String(localized: "Below your usual")
+            return (isFavorable ? .good : .steady, direction)
+        }()
+
+        return BodyMetricReading(
+            label: label,
+            systemImage: systemImage,
+            valueText: format(latest),
+            status: status,
+            statusText: statusText,
+            recentValues: recent.map(\.value)
+        )
+    }
+
+    // MARK: - Cardio
+
+    private func cardioInsight(_ input: InsightInput) -> InsightSnapshot {
+        let restingHeartRate = dailySeries(input.snapshots, \.restingHeartRate)
+        let steps = dailySeries(input.snapshots, \.steps)
+        let activityDuration = dailySeries(input.snapshots, \.exerciseMinutes)
+        let activityDistance = dailySeries(input.snapshots, \.walkingRunningDistanceMeters)
+        let activityEnergy = dailySeries(input.snapshots, \.activeEnergyKilocalories)
+        let vo2Max = dailySeries(input.snapshots, \.vo2Max)
+        let latestRestingHeartRate = restingHeartRate.last?.value
+        let latestVO2Max = vo2Max.last?.value
+
+        let status: InsightStatus = latestRestingHeartRate == nil ? .unknown : .good
+        let statusLabel = latestRestingHeartRate == nil
+            ? String(localized: "Building your cardio picture")
+            : String(localized: "Your cardio trends")
+
+        var facts: [ExplanationFact] = []
+        if let latestRestingHeartRate {
+            facts.append(ExplanationFact(
+                title: String(localized: "Resting heart rate"),
+                detail: String(localized: "Your latest resting heart rate was \(Int(latestRestingHeartRate.rounded())) bpm.")
+            ))
+        }
+        if let latestVO2Max {
+            facts.append(ExplanationFact(
+                title: String(localized: "VO₂ max"),
+                detail: String(localized: "Your latest estimate was \(latestVO2Max.formatted(.number.precision(.fractionLength(1)))) ml/kg/min.")
+            ))
+        }
+
+        return InsightSnapshot(
+            kind: .heart,
+            status: status,
+            statusLabel: statusLabel,
+            primaryValueText: latestRestingHeartRate.map {
+                String(localized: "\(Int($0.rounded())) bpm")
+            } ?? "—",
+            summary: String(localized: "See how your resting heart rate and daily activity move together over time. Apple Health combines readings from your iPhone, Apple Watch, and recorded activities."),
+            facts: facts,
+            comparisons: [],
+            trend: trend(series: restingHeartRate, asOf: input.date),
+            pattern: patternSeries(restingHeartRate, asOf: input.date),
+            action: nil,
+            confidence: restingHeartRate.isEmpty ? 0 : min(Double(restingHeartRate.count) / 28, 1),
+            generatedAt: input.date,
+            cardioFitness: CardioFitnessData(
+                restingHeartRate: restingHeartRate,
+                steps: steps,
+                activityDuration: activityDuration,
+                activityDistance: activityDistance,
+                activityEnergy: activityEnergy,
+                vo2Max: vo2Max
+            )
+        )
+    }
+
+    // MARK: - Training Load (retained for snapshot compatibility)
 
     private func trainingLoadInsight(_ input: InsightInput) -> InsightSnapshot {
         let load = input.recentLoad

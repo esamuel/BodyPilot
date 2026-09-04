@@ -2,7 +2,7 @@ import Foundation
 
 /// Deterministic synthetic health data for previews and tests.
 /// Values are generated from a seed — never derived from real user data.
-struct MockHealthProvider: HealthDataProviding, HealthMetricsProviding {
+struct MockHealthProvider: HealthDataProviding, HealthMetricsProviding, SleepDataProviding {
     var isHealthDataAvailable: Bool { true }
     var authorizationNeeded = false
     var seed: UInt64 = 42
@@ -43,6 +43,36 @@ struct MockHealthProvider: HealthDataProviding, HealthMetricsProviding {
         }
     }
 
+    func sleepNights(from startDate: Date, to endDate: Date) async throws -> [SleepNight] {
+        let calendar = Calendar.current
+        var nights: [SleepNight] = []
+        var day = calendar.startOfDay(for: startDate)
+        var index = 0
+        while day <= endDate {
+            let wake = calendar.date(bySettingHour: 6, minute: 35 + index % 15, second: 0, of: day) ?? day
+            let totalHours = 6.2 + Double(noise(day: index, salt: 11)) * 1.6
+            let start = wake.addingTimeInterval(-totalHours * 3600)
+            let pattern: [(SleepStage, TimeInterval)] = [
+                (.core, 48 * 60), (.deep, 35 * 60), (.core, 72 * 60), (.rem, 28 * 60),
+                (.awake, 8 * 60), (.core, 84 * 60), (.deep, 24 * 60), (.core, 68 * 60),
+                (.rem, 42 * 60), (.core, 55 * 60), (.rem, 35 * 60)
+            ]
+            let asleepBase = pattern.filter { $0.0.isAsleep }.reduce(0) { $0 + $1.1 }
+            let scale = totalHours * 3600 / asleepBase
+            var cursor = start
+            let segments = pattern.map { stage, duration in
+                let scaled = stage == .awake ? duration : duration * scale
+                defer { cursor = cursor.addingTimeInterval(scaled) }
+                return SleepSegment(start: cursor, end: cursor.addingTimeInterval(scaled), stage: stage)
+            }
+            nights.append(SleepNight(date: day, segments: segments))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+            index += 1
+        }
+        return nights
+    }
+
     private func snapshot(for day: Date, index: Int) -> DailyHealthSnapshot {
         DailyHealthSnapshot(
             date: day,
@@ -51,7 +81,11 @@ struct MockHealthProvider: HealthDataProviding, HealthMetricsProviding {
             restingHeartRate: 58 + Double(noise(day: index, salt: 3)) * 6,
             steps: 5_000 + Double(noise(day: index, salt: 4)) * 6_000,
             activeEnergyKilocalories: 300 + Double(noise(day: index, salt: 5)) * 250,
-            exerciseMinutes: 15 + Double(noise(day: index, salt: 6)) * 30
+            exerciseMinutes: 15 + Double(noise(day: index, salt: 6)) * 30,
+            walkingRunningDistanceMeters: 2_000 + Double(noise(day: index, salt: 9)) * 6_000,
+            vo2Max: index.isMultiple(of: 7)
+                ? 38 + Double(noise(day: index, salt: 10)) * 8
+                : nil
         )
     }
 

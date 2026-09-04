@@ -26,7 +26,15 @@ struct InsightDetailView: View {
         ScrollView {
             VStack(spacing: BPSpacing.large) {
                 hero
-                summaryCard
+                if !snapshot.metrics.isEmpty {
+                    metricsGrid
+                }
+                if !snapshot.bodyMetrics.isEmpty {
+                    BodyMetricsSection(metrics: snapshot.bodyMetrics)
+                }
+                if snapshot.kind != .recovery {
+                    summaryCard
+                }
                 if !snapshot.facts.isEmpty {
                     keyNumbersCard
                 }
@@ -52,7 +60,29 @@ struct InsightDetailView: View {
 
     // MARK: - Hero
 
+    @ViewBuilder
     private var hero: some View {
+        switch snapshot.kind {
+        case .movement:
+            MovementPathHero(
+                statusLabel: snapshot.statusLabel,
+                primaryValueText: snapshot.primaryValueText
+            )
+        case .recovery:
+            // The verdict hero already contains the summary, so the separate
+            // "What it means" card is skipped for recovery.
+            RecoveryVerdictHero(
+                statusLabel: snapshot.statusLabel,
+                summary: snapshot.summary,
+                score: snapshot.scoreValue,
+                status: snapshot.status
+            )
+        default:
+            artworkHero
+        }
+    }
+
+    private var artworkHero: some View {
         ZStack(alignment: .bottomLeading) {
             heroScene
                 .frame(height: 200)
@@ -99,6 +129,31 @@ struct InsightDetailView: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
+        }
+    }
+
+    // MARK: - Stat tiles
+
+    private var metricsGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: BPSpacing.small) {
+            ForEach(snapshot.metrics, id: \.self) { metric in
+                VStack(alignment: .leading, spacing: BPSpacing.xSmall) {
+                    Label {
+                        Text(metric.label)
+                            .font(.footnote.weight(.medium))
+                    } icon: {
+                        Image(systemName: metric.systemImage)
+                            .font(.footnote)
+                    }
+                    .foregroundStyle(.secondary)
+                    Text(metric.valueText)
+                        .font(.title2.bold())
+                        .foregroundStyle(BodyPilotColors.primaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(BPSpacing.medium)
+                .background(.regularMaterial, in: .rect(cornerRadius: BPCornerRadius.card))
+            }
         }
     }
 

@@ -68,7 +68,7 @@ struct InsightEngineTests {
     @Test("V1 produces the five insight worlds in hub order")
     func producesFiveWorlds() {
         let insights = engine.insights(for: input())
-        #expect(insights.map(\.kind) == [.sleep, .movement, .recovery, .trainingLoad, .workoutHistory])
+        #expect(insights.map(\.kind) == [.sleep, .movement, .recovery, .heart, .workoutHistory])
     }
 
     @Test("Empty input yields unknown statuses, never invented values")
@@ -151,26 +151,40 @@ struct InsightEngineTests {
         #expect(recovery.action?.timeLimitMinutes == 20)
     }
 
-    // MARK: - Training load
+    // MARK: - Cardio
 
-    @Test("Weekly minutes and heavy-load status derive from workout history")
-    func trainingLoadWeek() {
-        let workouts = [
-            WorkoutSummary(start: day(-1), durationMinutes: 150, activity: .walking, totalEnergyKilocalories: nil),
-            WorkoutSummary(start: day(-3), durationMinutes: 150, activity: .strength, totalEnergyKilocalories: nil),
-            WorkoutSummary(start: day(-20), durationMinutes: 100, activity: .walking, totalEnergyKilocalories: nil),
+    @Test("Cardio exposes all Apple Health trend series")
+    func cardioSeries() {
+        let snapshots = [
+            DailyHealthSnapshot(
+                date: day(-1),
+                sleepHours: nil,
+                hrvSDNN: nil,
+                restingHeartRate: 58,
+                steps: 8_200,
+                activeEnergyKilocalories: 460,
+                exerciseMinutes: 38,
+                walkingRunningDistanceMeters: 6_400,
+                vo2Max: 42.5
+            ),
         ]
-        let load = engine.insights(for: input(workouts: workouts, recentLoad: .heavy))[3]
-        #expect(load.status == .low)
-        #expect(load.primaryValueText.contains("300"))
-        #expect(load.trend == .up)
-        #expect(load.pattern.count == 7)
+        let cardio = engine.insights(for: input(snapshots: snapshots))[3]
+
+        #expect(cardio.kind == .heart)
+        #expect(cardio.cardioFitness?.restingHeartRate.count == 1)
+        #expect(cardio.cardioFitness?.steps.count == 1)
+        #expect(cardio.cardioFitness?.activityDuration.count == 1)
+        #expect(cardio.cardioFitness?.activityDistance.count == 1)
+        #expect(cardio.cardioFitness?.activityEnergy.count == 1)
+        #expect(cardio.cardioFitness?.vo2Max.first?.value == 42.5)
     }
 
-    @Test("No recent load reads as rested, not as a failure")
-    func trainingLoadRest() {
-        let load = engine.insights(for: input(recentLoad: .rest))[3]
-        #expect(load.status == .steady)
+    @Test("Cardio never invents measurements when Health has no readings")
+    func cardioEmpty() {
+        let cardio = engine.insights(for: input())[3]
+        #expect(cardio.status == .unknown)
+        #expect(cardio.primaryValueText == "—")
+        #expect(cardio.cardioFitness?.vo2Max.isEmpty == true)
     }
 
     // MARK: - Workout journey

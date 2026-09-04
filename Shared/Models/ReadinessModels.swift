@@ -91,4 +91,17 @@ struct DailyRecommendation: Sendable {
     let intensity: WorkoutIntensity
     let constraints: [WorkoutConstraint]
     let rationaleFacts: [ExplanationFact]
+
+    var dailySuggestion: DailySuggestion {
+        switch intensity {
+        case .recovery:
+            level == .recover ? .rest : .activeRecovery
+        case .light:
+            .light
+        case .moderate:
+            .moderate
+        case .hard:
+            .hard
+        }
+    }
 }

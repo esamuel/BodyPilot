@@ -1,7 +1,6 @@
 import Foundation
 
-/// The Body Insight "worlds". V1 builds sleep, movement, recovery, trainingLoad,
-/// and workoutHistory; the remaining kinds ship in V1.1 per BODY_INSIGHTS_EXPERIENCE.md.
+/// The Body Insight "worlds".
 enum InsightKind: String, Codable, CaseIterable, Sendable {
     case sleep
     case movement
@@ -51,6 +50,37 @@ struct SuggestedAction: Hashable, Sendable {
 
 /// Deterministic output of the InsightEngine for one world.
 /// Everything shown on an insight page derives from this snapshot.
+/// One compact stat tile, e.g. "Distance" / "3.2 km".
+struct InsightMetric: Hashable, Sendable {
+    let label: String
+    let valueText: String
+    let systemImage: String
+}
+
+/// One body-metric card on the recovery page: latest value, a status relative
+/// to the personal baseline, and a short recent series for the sparkline.
+struct BodyMetricReading: Hashable, Sendable {
+    let label: String
+    let systemImage: String
+    /// Formatted latest value, e.g. "45 bpm"; "—" when no recent reading exists.
+    let valueText: String
+    let status: InsightStatus
+    /// e.g. "Normal", "Above your usual", "No recent readings".
+    let statusText: String
+    /// Most recent values, oldest first, for the sparkline. Empty when unknown.
+    let recentValues: [Double]
+}
+
+/// Health history used by the Cardio overview and its selectable trend chart.
+struct CardioFitnessData: Sendable {
+    let restingHeartRate: [DatedValue]
+    let steps: [DatedValue]
+    let activityDuration: [DatedValue]
+    let activityDistance: [DatedValue]
+    let activityEnergy: [DatedValue]
+    let vo2Max: [DatedValue]
+}
+
 struct InsightSnapshot: Sendable {
     let kind: InsightKind
     let status: InsightStatus
@@ -71,6 +101,16 @@ struct InsightSnapshot: Sendable {
     /// 0–1; missing data reduces confidence, never invents a status.
     let confidence: Double
     let generatedAt: Date
+    /// Optional stat tiles rendered as a grid under the hero (movement uses
+    /// distance / exercise / active energy). Empty for kinds without tiles.
+    var metrics: [InsightMetric] = []
+    /// Optional body-metric cards (recovery uses resting HR / HRV / sleep).
+    var bodyMetrics: [BodyMetricReading] = []
+    /// The 0–100 Body Score behind this insight, when one exists (recovery
+    /// shows it as a ring). Always computed by BodyScoreEngine, never by AI.
+    var scoreValue: Int? = nil
+    /// Populated only for the Cardio insight.
+    var cardioFitness: CardioFitnessData? = nil
 }
 
 /// Validated facts handed to the AI for wording only. The AI may rephrase and

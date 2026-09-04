@@ -15,6 +15,7 @@ nonisolated enum HealthPermissions {
             HKQuantityType(.appleExerciseTime),
             HKQuantityType(.stepCount),
             HKQuantityType(.distanceWalkingRunning),
+            HKQuantityType(.vo2Max),
             HKCategoryType(.sleepAnalysis),
         ]
     }

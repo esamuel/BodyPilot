@@ -8,7 +8,7 @@ extension InsightKind {
         case .sleep: "Sleep"
         case .movement: "Steps & Movement"
         case .recovery: "Recovery"
-        case .heart: "Heart"
+        case .heart: "Cardio"
         case .trainingLoad: "Training Load"
         case .strength: "Strength"
         case .mobilityBalance: "Mobility & Balance"

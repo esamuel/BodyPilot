@@ -9,6 +9,8 @@ enum BodyPilotModelContainer {
         GeneratedWorkout.self,
         CoachPreference.self,
         ProgramEnrollment.self,
+        LifeStatus.self,
+        WorkoutJournalEntry.self,
     ])
 
     static func make(inMemoryOnly: Bool = false) throws -> ModelContainer {

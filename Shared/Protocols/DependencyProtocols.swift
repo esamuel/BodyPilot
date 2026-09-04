@@ -15,6 +15,12 @@ protocol HealthMetricsProviding: Sendable {
     func workouts(from startDate: Date, to endDate: Date) async throws -> [WorkoutSummary]
 }
 
+/// Provides normalized sleep sessions. HealthKit samples are converted into
+/// product models before they leave the health-data boundary.
+protocol SleepDataProviding: Sendable {
+    func sleepNights(from startDate: Date, to endDate: Date) async throws -> [SleepNight]
+}
+
 /// Derived, privacy-preserving context handed to the AI coach.
 /// Never contains raw HealthKit samples — only deltas relative to the personal baseline.
 struct AIContext: Codable, Hashable, Sendable {

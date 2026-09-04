@@ -64,7 +64,12 @@ extension InsightSnapshot {
             pattern: [],
             action: SuggestedAction(title: String(localized: "Take a 20-minute walk"), activity: .walking, timeLimitMinutes: 20),
             confidence: 0.9,
-            generatedAt: .now
+            generatedAt: .now,
+            metrics: [
+                InsightMetric(label: String(localized: "Distance"), valueText: "1.2 km", systemImage: "point.topleft.down.to.point.bottomright.curvepath"),
+                InsightMetric(label: String(localized: "Exercise"), valueText: String(localized: "12 min"), systemImage: "figure.walk"),
+                InsightMetric(label: String(localized: "Active Energy"), valueText: String(localized: "138 kcal"), systemImage: "flame.fill"),
+            ]
         )
     }
 

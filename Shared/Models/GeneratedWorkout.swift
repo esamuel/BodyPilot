@@ -12,6 +12,11 @@ final class GeneratedWorkout {
     var explanation: String
     var steps: [WorkoutStep]
     var completedAt: Date?
+    var journalNote: String
+    var perceivedExertion: Int?
+    var isFavorite: Bool
+    var photoIdentifiers: [String]
+    var healthWorkoutID: UUID?
 
     init(
         createdAt: Date = .now,
@@ -21,7 +26,12 @@ final class GeneratedWorkout {
         intensity: WorkoutIntensity,
         explanation: String,
         steps: [WorkoutStep] = [],
-        completedAt: Date? = nil
+        completedAt: Date? = nil,
+        journalNote: String = "",
+        perceivedExertion: Int? = nil,
+        isFavorite: Bool = false,
+        photoIdentifiers: [String] = [],
+        healthWorkoutID: UUID? = nil
     ) {
         self.createdAt = createdAt
         self.title = title
@@ -31,6 +41,11 @@ final class GeneratedWorkout {
         self.explanation = explanation
         self.steps = steps
         self.completedAt = completedAt
+        self.journalNote = journalNote
+        self.perceivedExertion = perceivedExertion
+        self.isFavorite = isFavorite
+        self.photoIdentifiers = photoIdentifiers
+        self.healthWorkoutID = healthWorkoutID
     }
 }
 

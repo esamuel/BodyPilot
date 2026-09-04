@@ -31,6 +31,12 @@ final class NotificationService {
         isMorningReminderEnabled = pending.contains { $0.identifier == Self.morningIdentifier }
     }
 
+    /// Removes training-pressure nudges while a Life Status is active.
+    func suspendForActiveLifeStatus() {
+        center.removePendingNotificationRequests(withIdentifiers: [Self.morningIdentifier])
+        isMorningReminderEnabled = false
+    }
+
     func setMorningReminder(enabled: Bool) async {
         guard enabled else {
             center.removePendingNotificationRequests(withIdentifiers: [Self.morningIdentifier])

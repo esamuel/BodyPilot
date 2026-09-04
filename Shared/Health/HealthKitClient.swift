@@ -14,7 +14,7 @@ enum HealthKitClientError: LocalizedError {
 
 /// The only type that talks to HealthKit directly. Converts raw samples into
 /// normalized domain models; raw HealthKit data never crosses this boundary.
-actor HealthKitClient: HealthDataProviding, HealthMetricsProviding {
+actor HealthKitClient: HealthDataProviding, HealthMetricsProviding, SleepDataProviding {
     private let store = HKHealthStore()
     private let calendar = Calendar.current
 
@@ -74,6 +74,14 @@ actor HealthKitClient: HealthDataProviding, HealthMetricsProviding {
             .appleExerciseTime, options: .cumulativeSum,
             unit: .minute(), from: start, to: endDate
         )
+        async let distance = dailyStatistics(
+            .distanceWalkingRunning, options: .cumulativeSum,
+            unit: .meter(), from: start, to: endDate
+        )
+        async let vo2Max = dailyStatistics(
+            .vo2Max, options: .discreteAverage,
+            unit: HKUnit(from: "ml/kg*min"), from: start, to: endDate
+        )
 
         let sleepByDay = try await sleep
         let hrvByDay = try await hrv
@@ -81,6 +89,8 @@ actor HealthKitClient: HealthDataProviding, HealthMetricsProviding {
         let stepsByDay = try await steps
         let energyByDay = try await energy
         let exerciseByDay = try await exercise
+        let distanceByDay = try await distance
+        let vo2MaxByDay = try await vo2Max
 
         var snapshots: [DailyHealthSnapshot] = []
         var day = start
@@ -93,7 +103,9 @@ actor HealthKitClient: HealthDataProviding, HealthMetricsProviding {
                     restingHeartRate: restingHRByDay[day],
                     steps: stepsByDay[day],
                     activeEnergyKilocalories: energyByDay[day],
-                    exerciseMinutes: exerciseByDay[day]
+                    exerciseMinutes: exerciseByDay[day],
+                    walkingRunningDistanceMeters: distanceByDay[day],
+                    vo2Max: vo2MaxByDay[day]
                 )
             )
             guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
@@ -109,20 +121,97 @@ actor HealthKitClient: HealthDataProviding, HealthMetricsProviding {
             sortDescriptors: [SortDescriptor(\.startDate, order: .reverse)]
         )
         let workouts = try await descriptor.result(for: store)
-        return workouts.map { workout in
-            WorkoutSummary(
-                start: workout.startDate,
-                durationMinutes: workout.duration / 60,
-                activity: ActivityType(workoutActivityType: workout.workoutActivityType),
-                totalEnergyKilocalories: workout
-                    .statistics(for: HKQuantityType(.activeEnergyBurned))?
-                    .sumQuantity()?
-                    .doubleValue(for: .kilocalorie())
+        var summaries: [WorkoutSummary] = []
+        summaries.reserveCapacity(workouts.count)
+
+        for workout in workouts {
+            summaries.append(
+                WorkoutSummary(
+                    id: workout.uuid,
+                    start: workout.startDate,
+                    durationMinutes: workout.duration / 60,
+                    activity: ActivityType(workoutActivityType: workout.workoutActivityType),
+                    totalEnergyKilocalories: workout
+                        .statistics(for: HKQuantityType(.activeEnergyBurned))?
+                        .sumQuantity()?
+                        .doubleValue(for: .kilocalorie()),
+                    heartRateSamples: try await heartRateSamples(for: workout)
+                )
             )
         }
+        return summaries
+    }
+
+    func sleepNights(from startDate: Date, to endDate: Date) async throws -> [SleepNight] {
+        let start = calendar.startOfDay(for: startDate)
+        let endDay = calendar.startOfDay(for: endDate)
+        let end = calendar.date(byAdding: .day, value: 1, to: endDay) ?? endDate
+        let queryStart = calendar.date(byAdding: .hour, value: -18, to: start) ?? start
+        let predicate = HKQuery.predicateForSamples(withStart: queryStart, end: end, options: [])
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.categorySample(type: HKCategoryType(.sleepAnalysis), predicate: predicate)],
+            sortDescriptors: [SortDescriptor(\.startDate)]
+        )
+        let samples = try await descriptor.result(for: store)
+
+        struct Candidate {
+            let source: String
+            let segment: SleepSegment
+        }
+
+        let candidates: [Candidate] = samples.compactMap { sample in
+            guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value),
+                  let stage = SleepStage(healthKitValue: value) else { return nil }
+            return Candidate(
+                source: sample.sourceRevision.source.bundleIdentifier,
+                segment: SleepSegment(id: sample.uuid, start: sample.startDate, end: sample.endDate, stage: stage)
+            )
+        }
+
+        let byWakeDay = Dictionary(grouping: candidates) {
+            calendar.startOfDay(for: $0.segment.end)
+        }
+
+        return byWakeDay.compactMap { day, dayCandidates in
+            guard day >= start && day <= endDay else { return nil }
+            // Sleep can be recorded by both a Watch and the phone. Use the source
+            // with the richest asleep timeline to avoid double-counting overlaps.
+            let bySource = Dictionary(grouping: dayCandidates, by: \.source)
+            guard let best = bySource.values.max(by: { lhs, rhs in
+                asleepCoverage(lhs.map(\.segment)) < asleepCoverage(rhs.map(\.segment))
+            }) else { return nil }
+            let segments = best.map(\.segment).sorted { $0.start < $1.start }
+            guard segments.contains(where: { $0.stage.isAsleep }) else { return nil }
+            return SleepNight(date: day, segments: segments)
+        }
+        .sorted { $0.date < $1.date }
     }
 
     // MARK: - Private queries
+
+    private func heartRateSamples(for workout: HKWorkout) async throws -> [WorkoutHeartRateSample] {
+        let type = HKQuantityType(.heartRate)
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: type, predicate: predicate)],
+            sortDescriptors: [SortDescriptor(\.startDate)]
+        )
+        let samples = try await descriptor.result(for: store)
+        let unit = HKUnit.count().unitDivided(by: .minute())
+
+        return samples.enumerated().compactMap { index, sample in
+            let nextStart = samples.indices.contains(index + 1)
+                ? samples[index + 1].startDate
+                : workout.endDate
+            let end = min(max(sample.endDate, nextStart), workout.endDate)
+            guard end > sample.startDate else { return nil }
+            return WorkoutHeartRateSample(
+                start: sample.startDate,
+                end: end,
+                beatsPerMinute: sample.quantity.doubleValue(for: unit)
+            )
+        }
+    }
 
     private func dailyStatistics(
         _ identifier: HKQuantityTypeIdentifier,
@@ -154,26 +243,26 @@ actor HealthKitClient: HealthDataProviding, HealthMetricsProviding {
     }
 
     private func sleepHoursByDay(from start: Date, to end: Date) async throws -> [Date: Double] {
-        // Include the prior evening so sleep starting before midnight counts toward the wake day.
-        let queryStart = calendar.date(byAdding: .hour, value: -12, to: start) ?? start
-        let predicate = HKQuery.predicateForSamples(withStart: queryStart, end: end, options: [])
-        let descriptor = HKSampleQueryDescriptor(
-            predicates: [.categorySample(type: HKCategoryType(.sleepAnalysis), predicate: predicate)],
-            sortDescriptors: [SortDescriptor(\.startDate)]
-        )
-        let samples = try await descriptor.result(for: store)
+        let nights = try await sleepNights(from: start, to: end)
+        return Dictionary(uniqueKeysWithValues: nights.map { ($0.date, $0.totalSleep / 3600) })
+    }
 
-        let asleepValues = HKCategoryValueSleepAnalysis.allAsleepValues
-        var hours: [Date: Double] = [:]
-        for sample in samples {
-            guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value),
-                  asleepValues.contains(value) else { continue }
-            // Attribute each asleep interval to the day the user woke up.
-            // V1 limitation: overlapping samples from multiple sources may double-count.
-            let day = calendar.startOfDay(for: sample.endDate)
-            hours[day, default: 0] += sample.endDate.timeIntervalSince(sample.startDate) / 3600
+    private func asleepCoverage(_ segments: [SleepSegment]) -> TimeInterval {
+        segments.lazy.filter { $0.stage.isAsleep }.reduce(0) { $0 + $1.duration }
+    }
+}
+
+private extension SleepStage {
+    nonisolated init?(healthKitValue: HKCategoryValueSleepAnalysis) {
+        switch healthKitValue {
+        case .awake: self = .awake
+        case .asleepREM: self = .rem
+        case .asleepCore: self = .core
+        case .asleepDeep: self = .deep
+        case .asleep, .asleepUnspecified: self = .asleepUnspecified
+        case .inBed: return nil
+        @unknown default: return nil
         }
-        return hours
     }
 }
 

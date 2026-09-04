@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Five-tab shell per PRD section 6: Today, Coach, Workout, Progress, Me.
+/// Three-tab shell: Path, Insights, and Workouts. Coach is presented contextually,
+/// and profile + settings live behind the person icon on Path.
 /// Presents onboarding until a completed profile exists.
 struct MainTabView: View {
     @Query private var profiles: [UserProfile]
@@ -33,20 +34,14 @@ struct MainTabView: View {
 
     var body: some View {
         TabView {
-            Tab("Today", systemImage: "sun.max.fill") {
-                TodayView()
+            Tab("Path", systemImage: "point.topleft.down.to.point.bottomright.curvepath") {
+                PathView()
             }
-            Tab("Coach", systemImage: "bubble.left.and.text.bubble.right.fill") {
-                CoachView()
+            Tab("Insights", systemImage: "sparkles") {
+                InsightsTabView()
             }
-            Tab("Workout", systemImage: "figure.run") {
+            Tab("Workouts", systemImage: "figure.run") {
                 WorkoutTabView()
-            }
-            Tab("Progress", systemImage: "chart.line.uptrend.xyaxis") {
-                ProgressTabView()
-            }
-            Tab("Me", systemImage: "person.crop.circle") {
-                MeView()
             }
         }
         // task(id:) runs at appearance and on every change, so the cover
@@ -65,5 +60,8 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
-        .modelContainer(for: [UserProfile.self, CoachPreference.self], inMemory: true)
+        .modelContainer(
+            for: [UserProfile.self, CoachPreference.self, CheckIn.self, LifeStatus.self, GeneratedWorkout.self, WorkoutJournalEntry.self],
+            inMemory: true
+        )
 }

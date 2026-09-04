@@ -10,6 +10,8 @@ struct ReadinessSnapshot: Sendable {
     let recentLoad: TrainingLoad
     let history: [DailyHealthSnapshot]
     let workoutHistory: [WorkoutSummary]
+    let corridor: ActivityCorridor
+    let streak: StreakResult
 }
 
 /// User preferences fed into the pipeline (from the stored profile or defaults).
@@ -59,6 +61,8 @@ struct ReadinessService: Sendable {
     private let baselineEngine: BaselineEngine
     private let loadEngine: LoadEngine
     private let scoreEngine: BodyScoreEngine
+    private let corridorEngine: CorridorEngine
+    private let streakEngine: StreakEngine
     private let recommendationEngine: RecommendationEngine
 
     init(
@@ -66,12 +70,16 @@ struct ReadinessService: Sendable {
         baselineEngine: BaselineEngine = BaselineEngine(),
         loadEngine: LoadEngine = LoadEngine(),
         scoreEngine: BodyScoreEngine = BodyScoreEngine(),
+        corridorEngine: CorridorEngine = CorridorEngine(),
+        streakEngine: StreakEngine = StreakEngine(),
         recommendationEngine: RecommendationEngine = RecommendationEngine()
     ) {
         self.healthMetrics = healthMetrics
         self.baselineEngine = baselineEngine
         self.loadEngine = loadEngine
         self.scoreEngine = scoreEngine
+        self.corridorEngine = corridorEngine
+        self.streakEngine = streakEngine
         self.recommendationEngine = recommendationEngine
     }
 
@@ -79,21 +87,46 @@ struct ReadinessService: Sendable {
         preferences: ReadinessPreferences,
         feeling: FeelingLevel?,
         soreness: [SorenessArea],
+        lifeStatuses: [LifeStatus] = [],
+        workoutRPEOverrides: [UUID: Int] = [:],
         now: Date = .now
     ) async throws -> ReadinessSnapshot {
         let calendar = Calendar.current
-        guard let historyStart = calendar.date(byAdding: .day, value: -90, to: now),
-              let workoutStart = calendar.date(byAdding: .day, value: -30, to: now) else {
+        guard let historyStart = calendar.date(byAdding: .year, value: -6, to: now),
+              let workoutStart = calendar.date(byAdding: .year, value: -1, to: now) else {
             throw ReadinessServiceError.invalidDateRange
         }
 
         async let snapshotsTask = healthMetrics.dailySnapshots(from: historyStart, to: now)
         async let workoutsTask = healthMetrics.workouts(from: workoutStart, to: now)
         let snapshots = try await snapshotsTask
-        let workouts = try await workoutsTask
+        let rawWorkouts = try await workoutsTask
+        let workouts = rawWorkouts.map { workout in
+            WorkoutSummary(
+                id: workout.id,
+                start: workout.start,
+                durationMinutes: workout.durationMinutes,
+                activity: workout.activity,
+                totalEnergyKilocalories: workout.totalEnergyKilocalories,
+                heartRateSamples: workout.heartRateSamples,
+                perceivedExertion: workoutRPEOverrides[workout.id] ?? workout.perceivedExertion
+            )
+        }
 
         let deltas = baselineEngine.deltas(for: snapshots, asOf: now)
         let recentLoad = loadEngine.recentLoad(workouts: workouts, asOf: now)
+        let corridor = corridorEngine.corridor(
+            window: .thirtyDays,
+            snapshots: snapshots,
+            workouts: workouts,
+            lifeStatuses: lifeStatuses,
+            asOf: now
+        )
+        let streak = streakEngine.streak(
+            days: corridor.days,
+            lifeStatuses: lifeStatuses,
+            asOf: now
+        )
         let score = scoreEngine.computeScore(
             from: BodyScoreInput(
                 deltas: deltas,
@@ -110,7 +143,8 @@ struct ReadinessService: Sendable {
                 preferredWorkoutMinutes: preferences.preferredWorkoutMinutes,
                 equipment: preferences.equipment,
                 soreness: soreness,
-                feeling: feeling
+                feeling: feeling,
+                corridorDay: corridor.today
             )
         )
         return ReadinessSnapshot(
@@ -119,7 +153,9 @@ struct ReadinessService: Sendable {
             deltas: deltas,
             recentLoad: recentLoad,
             history: snapshots,
-            workoutHistory: workouts
+            workoutHistory: workouts,
+            corridor: corridor,
+            streak: streak
         )
     }
 }

@@ -10,6 +10,19 @@
 		03AA923A30F36C84D8271AAA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C4326E81C1BF9F8E38E1D83B /* Assets.xcassets */; };
 		04B185BA05AE47DD4C1AB58C /* BodyPilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFEA158189F3067C3E240C06 /* BodyPilotApp.swift */; };
 		328AD648E6B246E9210EF9A6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEC2226DE02DE3022855CB7 /* ContentView.swift */; };
+		403E542330499C7C007A3D21 /* SleepModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403E542230499C7C007A3D21 /* SleepModels.swift */; };
+		403E542430499C7C007A3D21 /* SleepModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403E542230499C7C007A3D21 /* SleepModels.swift */; };
+		403E542930499CAA007A3D21 /* SleepModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403E542830499CAA007A3D21 /* SleepModel.swift */; };
+		403E542B30499CAA007A3D21 /* SleepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403E542A30499CAA007A3D21 /* SleepView.swift */; };
+		4054F7F4304A9BDC00DE042A /* MovementPathHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4054F7F3304A9BDC00DE042A /* MovementPathHero.swift */; };
+		4054F7F6304A9DD000DE042A /* BodyMetricsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4054F7F5304A9DD000DE042A /* BodyMetricsSection.swift */; };
+		4054F7F8304AC04A00DE042A /* CardioFitnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4054F7F7304AC04A00DE042A /* CardioFitnessView.swift */; };
+		405E9E323049D86100437EDE /* UserDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E9E313049D86100437EDE /* UserDataView.swift */; };
+		405E9E343049D87100437EDE /* PersonalDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E9E333049D87100437EDE /* PersonalDetailsView.swift */; };
+		405E9E363049D88300437EDE /* HeartRateZonesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E9E353049D88300437EDE /* HeartRateZonesView.swift */; };
+		405E9E383049D8C300437EDE /* HeartRateZoneEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E9E373049D8C300437EDE /* HeartRateZoneEngine.swift */; };
+		405E9E393049D8C300437EDE /* HeartRateZoneEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E9E373049D8C300437EDE /* HeartRateZoneEngine.swift */; };
+		405E9E3D304A89DB00437EDE /* IntroOnboardingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E9E3C304A89DB00437EDE /* IntroOnboardingScreen.swift */; };
 		40718C92303ECD4600770E67 /* InsightExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40718C91303ECD4600770E67 /* InsightExplainer.swift */; };
 		40718C93303ECD4600770E67 /* InsightExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40718C91303ECD4600770E67 /* InsightExplainer.swift */; };
 		40718C95303ECD4F00770E67 /* FoundationModelInsightExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40718C94303ECD4F00770E67 /* FoundationModelInsightExplainer.swift */; };
@@ -38,6 +51,25 @@
 		40CB8F05303EC673001F01B0 /* InsightsHubSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40CB8F04303EC673001F01B0 /* InsightsHubSection.swift */; };
 		40D10003303F800000000003 /* WatchProfileSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D10002303F800000000002 /* WatchProfileSyncService.swift */; };
 		40D10004303F800000000004 /* WatchProfileSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D10002303F800000000002 /* WatchProfileSyncService.swift */; };
+		40E64DDC3043F26500B17109 /* LifeStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DDB3043F26500B17109 /* LifeStatus.swift */; };
+		40E64DDD3043F26500B17109 /* LifeStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DDB3043F26500B17109 /* LifeStatus.swift */; };
+		40E64DDF3043F26600B17109 /* CorridorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DDE3043F26600B17109 /* CorridorModels.swift */; };
+		40E64DE03043F26600B17109 /* CorridorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DDE3043F26600B17109 /* CorridorModels.swift */; };
+		40E64DE23043F2C100B17109 /* StreakEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DE13043F2C100B17109 /* StreakEngine.swift */; };
+		40E64DE33043F2C100B17109 /* StreakEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DE13043F2C100B17109 /* StreakEngine.swift */; };
+		40E64DE53043F2C200B17109 /* CorridorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DE43043F2C200B17109 /* CorridorEngine.swift */; };
+		40E64DE63043F2C200B17109 /* CorridorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DE43043F2C200B17109 /* CorridorEngine.swift */; };
+		40E64DEF3043F3E500B17109 /* PathModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DEE3043F3E500B17109 /* PathModel.swift */; };
+		40E64DF13043F3FE00B17109 /* LifeStatusSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DF03043F3FE00B17109 /* LifeStatusSheet.swift */; };
+		40E64DF33043F40C00B17109 /* CorridorChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DF23043F40C00B17109 /* CorridorChart.swift */; };
+		40E64DF53043F45700B17109 /* PathView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DF43043F45700B17109 /* PathView.swift */; };
+		40E64DF73043F48600B17109 /* InsightsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DF63043F48600B17109 /* InsightsTabView.swift */; };
+		40E64DF93043F56D00B17109 /* WorkoutJournalEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DF83043F56D00B17109 /* WorkoutJournalEntry.swift */; };
+		40E64DFA3043F56D00B17109 /* WorkoutJournalEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DF83043F56D00B17109 /* WorkoutJournalEntry.swift */; };
+		40E64DFC3043F5C200B17109 /* HealthWorkoutJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DFB3043F5C200B17109 /* HealthWorkoutJournalView.swift */; };
+		40E64DFE3043F67F00B17109 /* RecapEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DFD3043F67F00B17109 /* RecapEngine.swift */; };
+		40E64DFF3043F68000B17109 /* RecapEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64DFD3043F67F00B17109 /* RecapEngine.swift */; };
+		40E64E013043F6FE00B17109 /* RecapSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E64E003043F6FE00B17109 /* RecapSection.swift */; };
 		40E93665303D894900D883D6 /* DomainTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E93664303D894900D883D6 /* DomainTypes.swift */; };
 		40E93666303D894900D883D6 /* DomainTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E93664303D894900D883D6 /* DomainTypes.swift */; };
 		40E93668303D895200D883D6 /* ReadinessModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E93667303D895200D883D6 /* ReadinessModels.swift */; };
@@ -188,6 +220,17 @@
 /* Begin PBXFileReference section */
 		0301949D3347C8094067E151 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		1DEC2226DE02DE3022855CB7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		403E542230499C7C007A3D21 /* SleepModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepModels.swift; sourceTree = "<group>"; };
+		403E542830499CAA007A3D21 /* SleepModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepModel.swift; sourceTree = "<group>"; };
+		403E542A30499CAA007A3D21 /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
+		4054F7F3304A9BDC00DE042A /* MovementPathHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementPathHero.swift; sourceTree = "<group>"; };
+		4054F7F5304A9DD000DE042A /* BodyMetricsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricsSection.swift; sourceTree = "<group>"; };
+		4054F7F7304AC04A00DE042A /* CardioFitnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardioFitnessView.swift; sourceTree = "<group>"; };
+		405E9E313049D86100437EDE /* UserDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDataView.swift; sourceTree = "<group>"; };
+		405E9E333049D87100437EDE /* PersonalDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalDetailsView.swift; sourceTree = "<group>"; };
+		405E9E353049D88300437EDE /* HeartRateZonesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateZonesView.swift; sourceTree = "<group>"; };
+		405E9E373049D8C300437EDE /* HeartRateZoneEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateZoneEngine.swift; sourceTree = "<group>"; };
+		405E9E3C304A89DB00437EDE /* IntroOnboardingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroOnboardingScreen.swift; sourceTree = "<group>"; };
 		40718C91303ECD4600770E67 /* InsightExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightExplainer.swift; sourceTree = "<group>"; };
 		40718C94303ECD4F00770E67 /* FoundationModelInsightExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelInsightExplainer.swift; sourceTree = "<group>"; };
 		40718C96303ECD5A00770E67 /* InsightCoachModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCoachModel.swift; sourceTree = "<group>"; };
@@ -211,6 +254,20 @@
 		40CB8F02303EC3ED001F01B0 /* WorkoutJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutJourneyView.swift; sourceTree = "<group>"; };
 		40CB8F04303EC673001F01B0 /* InsightsHubSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsHubSection.swift; sourceTree = "<group>"; };
 		40D10002303F800000000002 /* WatchProfileSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchProfileSyncService.swift; sourceTree = "<group>"; };
+		40E64DDA3043F24700B17109 /* PRD_DELTA.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRD_DELTA.md; sourceTree = "<group>"; };
+		40E64DDB3043F26500B17109 /* LifeStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeStatus.swift; sourceTree = "<group>"; };
+		40E64DDE3043F26600B17109 /* CorridorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorridorModels.swift; sourceTree = "<group>"; };
+		40E64DE13043F2C100B17109 /* StreakEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakEngine.swift; sourceTree = "<group>"; };
+		40E64DE43043F2C200B17109 /* CorridorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorridorEngine.swift; sourceTree = "<group>"; };
+		40E64DEE3043F3E500B17109 /* PathModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathModel.swift; sourceTree = "<group>"; };
+		40E64DF03043F3FE00B17109 /* LifeStatusSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeStatusSheet.swift; sourceTree = "<group>"; };
+		40E64DF23043F40C00B17109 /* CorridorChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorridorChart.swift; sourceTree = "<group>"; };
+		40E64DF43043F45700B17109 /* PathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathView.swift; sourceTree = "<group>"; };
+		40E64DF63043F48600B17109 /* InsightsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsTabView.swift; sourceTree = "<group>"; };
+		40E64DF83043F56D00B17109 /* WorkoutJournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutJournalEntry.swift; sourceTree = "<group>"; };
+		40E64DFB3043F5C200B17109 /* HealthWorkoutJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthWorkoutJournalView.swift; sourceTree = "<group>"; };
+		40E64DFD3043F67F00B17109 /* RecapEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecapEngine.swift; sourceTree = "<group>"; };
+		40E64E003043F6FE00B17109 /* RecapSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecapSection.swift; sourceTree = "<group>"; };
 		40E93664303D894900D883D6 /* DomainTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainTypes.swift; sourceTree = "<group>"; };
 		40E93667303D895200D883D6 /* ReadinessModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessModels.swift; sourceTree = "<group>"; };
 		40E9366A303D896100D883D6 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
@@ -347,11 +404,37 @@
 			path = BodyPilot;
 			sourceTree = "<group>";
 		};
+		403E542730499CAA007A3D21 /* Sleep */ = {
+			isa = PBXGroup;
+			children = (
+				403E542830499CAA007A3D21 /* SleepModel.swift */,
+				403E542A30499CAA007A3D21 /* SleepView.swift */,
+			);
+			path = Sleep;
+			sourceTree = "<group>";
+		};
 		4052EAC7304182550098CF92 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Subscription;
+			sourceTree = "<group>";
+		};
+		405E9E2F3049D81600437EDE /* Profile 2 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "Profile 2";
+			sourceTree = "<group>";
+		};
+		405E9E303049D84C00437EDE /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				405E9E313049D86100437EDE /* UserDataView.swift */,
+				405E9E333049D87100437EDE /* PersonalDetailsView.swift */,
+				405E9E353049D88300437EDE /* HeartRateZonesView.swift */,
+			);
+			path = Profile;
 			sourceTree = "<group>";
 		};
 		40718C9D303ECDD900770E67 /* Frameworks */ = {
@@ -387,6 +470,7 @@
 			isa = PBXGroup;
 			children = (
 				40718CB8303ED7D000770E67 /* InsightHeroArt.swift */,
+				4054F7F3304A9BDC00DE042A /* MovementPathHero.swift */,
 			);
 			path = Illustrations;
 			sourceTree = "<group>";
@@ -400,6 +484,10 @@
 				40CB8F02303EC3ED001F01B0 /* WorkoutJourneyView.swift */,
 				40CB8F04303EC673001F01B0 /* InsightsHubSection.swift */,
 				40718C96303ECD5A00770E67 /* InsightCoachModel.swift */,
+				40E64DF63043F48600B17109 /* InsightsTabView.swift */,
+				40E64E003043F6FE00B17109 /* RecapSection.swift */,
+				4054F7F5304A9DD000DE042A /* BodyMetricsSection.swift */,
+				4054F7F7304AC04A00DE042A /* CardioFitnessView.swift */,
 			);
 			path = Insights;
 			sourceTree = "<group>";
@@ -410,6 +498,17 @@
 				40D10002303F800000000002 /* WatchProfileSyncService.swift */,
 			);
 			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		40E64DED3043F3E400B17109 /* Path */ = {
+			isa = PBXGroup;
+			children = (
+				40E64DEE3043F3E500B17109 /* PathModel.swift */,
+				40E64DF03043F3FE00B17109 /* LifeStatusSheet.swift */,
+				40E64DF23043F40C00B17109 /* CorridorChart.swift */,
+				40E64DF43043F45700B17109 /* PathView.swift */,
+			);
+			path = Path;
 			sourceTree = "<group>";
 		};
 		40E93663303D894900D883D6 /* Models */ = {
@@ -425,6 +524,10 @@
 				40E93679303D896E00D883D6 /* BodyPilotModelContainer.swift */,
 				40E936B9303D9F8600D883D6 /* HealthMetrics.swift */,
 				40E936E1303DAD5900D883D6 /* WorkoutPlan.swift */,
+				40E64DDB3043F26500B17109 /* LifeStatus.swift */,
+				40E64DDE3043F26600B17109 /* CorridorModels.swift */,
+				40E64DF83043F56D00B17109 /* WorkoutJournalEntry.swift */,
+				403E542230499C7C007A3D21 /* SleepModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -464,6 +567,10 @@
 				40E9372E303DBE5500D883D6 /* Onboarding */,
 				40CB8EFB303EC3A6001F01B0 /* Insights */,
 				4052EAC7304182550098CF92 /* Subscription */,
+				40E64DED3043F3E400B17109 /* Path */,
+				403E542730499CAA007A3D21 /* Sleep */,
+				405E9E2F3049D81600437EDE /* Profile 2 */,
+				405E9E303049D84C00437EDE /* Profile */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -494,6 +601,7 @@
 				40E93691303D89D500D883D6 /* WorkoutTabView.swift */,
 				40E936EB303DADBD00D883D6 /* WorkoutDetailView.swift */,
 				40E9373D303E100100D883D6 /* WorkoutHistoryModel.swift */,
+				40E64DFB3043F5C200B17109 /* HealthWorkoutJournalView.swift */,
 			);
 			path = Workout;
 			sourceTree = "<group>";
@@ -543,6 +651,7 @@
 				40E936C0303D9FAC00D883D6 /* HealthKitClient.swift */,
 				40E936C3303D9FBD00D883D6 /* BaselineEngine.swift */,
 				40E936C6303D9FD100D883D6 /* MockHealthProvider.swift */,
+				405E9E373049D8C300437EDE /* HeartRateZoneEngine.swift */,
 			);
 			path = Health;
 			sourceTree = "<group>";
@@ -555,6 +664,9 @@
 				40E936D4303DAAFC00D883D6 /* RecommendationEngine.swift */,
 				40E93716303DB7A000D883D6 /* ReadinessService.swift */,
 				40E9373F303E120E00D883D6 /* ProgressEngine.swift */,
+				40E64DE13043F2C100B17109 /* StreakEngine.swift */,
+				40E64DE43043F2C200B17109 /* CorridorEngine.swift */,
+				40E64DFD3043F67F00B17109 /* RecapEngine.swift */,
 			);
 			path = Readiness;
 			sourceTree = "<group>";
@@ -629,6 +741,7 @@
 			isa = PBXGroup;
 			children = (
 				40E9372F303DBE7D00D883D6 /* OnboardingView.swift */,
+				405E9E3C304A89DB00437EDE /* IntroOnboardingScreen.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -677,6 +790,7 @@
 				40718CA2303ECDD900770E67 /* BodyPilotWidgets */,
 				40718C9D303ECDD900770E67 /* Frameworks */,
 				9DC1E0762473644AA26F4FCE /* Products */,
+				40E64DDA3043F24700B17109 /* PRD_DELTA.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -940,16 +1054,24 @@
 				40E936F3303DB03E00D883D6 /* WatchWorkoutModel.swift in Sources */,
 				40D10003303F800000000003 /* WatchProfileSyncService.swift in Sources */,
 				40E9370A303DB35400D883D6 /* CoachService.swift in Sources */,
+				40E64DDD3043F26500B17109 /* LifeStatus.swift in Sources */,
 				40E9366C303D896200D883D6 /* UserProfile.swift in Sources */,
+				403E542430499C7C007A3D21 /* SleepModels.swift in Sources */,
 				40E9369C303D89F400D883D6 /* WatchStartWorkoutView.swift in Sources */,
 				40E93717303DB7A000D883D6 /* ReadinessService.swift in Sources */,
+				40E64DE53043F2C200B17109 /* CorridorEngine.swift in Sources */,
 				40E93740303E120E00D883D6 /* ProgressEngine.swift in Sources */,
 				40CB8EE6303EBA85001F01B0 /* InsightModels.swift in Sources */,
 				40E93682303D897800D883D6 /* DesignSystem.swift in Sources */,
 				40E936D3303DAAEB00D883D6 /* LoadEngine.swift in Sources */,
 				40E936FD303DB32A00D883D6 /* CoachProfiles.swift in Sources */,
 				40E936F5303DB04D00D883D6 /* ActiveWorkoutView.swift in Sources */,
+				40E64DE03043F26600B17109 /* CorridorModels.swift in Sources */,
+				40E64DFE3043F67F00B17109 /* RecapEngine.swift in Sources */,
 				40E936BB303D9F8600D883D6 /* HealthMetrics.swift in Sources */,
+				405E9E393049D8C300437EDE /* HeartRateZoneEngine.swift in Sources */,
+				40E64DFA3043F56D00B17109 /* WorkoutJournalEntry.swift in Sources */,
+				40E64DE33043F2C100B17109 /* StreakEngine.swift in Sources */,
 				40CB8EEC303EBAF5001F01B0 /* InsightEngine.swift in Sources */,
 				40E936C8303D9FD100D883D6 /* MockHealthProvider.swift in Sources */,
 				40E93701303DB32F00D883D6 /* SafetyGate.swift in Sources */,
@@ -973,6 +1095,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				40CB8EE5303EBA85001F01B0 /* InsightModels.swift in Sources */,
+				40E64DF53043F45700B17109 /* PathView.swift in Sources */,
+				40E64DF13043F3FE00B17109 /* LifeStatusSheet.swift in Sources */,
 				40E936CA303D9FD500D883D6 /* HealthAccessModel.swift in Sources */,
 				40E9372B303DB80F00D883D6 /* PaywallView.swift in Sources */,
 				40E93709303DB35400D883D6 /* CoachService.swift in Sources */,
@@ -981,6 +1105,7 @@
 				40E93729303DB80800D883D6 /* SubscriptionService.swift in Sources */,
 				40E9371B303DB7DC00D883D6 /* FeelingLevel+AppEnum.swift in Sources */,
 				40E9367E303D897500D883D6 /* DependencyProtocols.swift in Sources */,
+				40E64DE23043F2C100B17109 /* StreakEngine.swift in Sources */,
 				40E936C2303D9FAC00D883D6 /* HealthKitClient.swift in Sources */,
 				40718CB9303ED7D000770E67 /* InsightHeroArt.swift in Sources */,
 				40E936BA303D9F8600D883D6 /* HealthMetrics.swift in Sources */,
@@ -994,30 +1119,47 @@
 				40E9373C303DFC2300D883D6 /* ProfileEditorView.swift in Sources */,
 				40E93692303D89D500D883D6 /* WorkoutTabView.swift in Sources */,
 				40E936E6303DAD9300D883D6 /* WorkoutTemplates.swift in Sources */,
+				405E9E3D304A89DB00437EDE /* IntroOnboardingScreen.swift in Sources */,
 				40E93677303D896C00D883D6 /* ProgramEnrollment.swift in Sources */,
+				4054F7F8304AC04A00DE042A /* CardioFitnessView.swift in Sources */,
 				40E9370D303DB36200D883D6 /* FoundationModelCoach.swift in Sources */,
 				40718C95303ECD4F00770E67 /* FoundationModelInsightExplainer.swift in Sources */,
 				40E93706303DB35200D883D6 /* FallbackCoach.swift in Sources */,
+				4054F7F6304A9DD000DE042A /* BodyMetricsSection.swift in Sources */,
+				40E64DFF3043F68000B17109 /* RecapEngine.swift in Sources */,
 				40E936E3303DAD5900D883D6 /* WorkoutPlan.swift in Sources */,
 				40E936CF303DAAE000D883D6 /* BodyScoreEngine.swift in Sources */,
 				04B185BA05AE47DD4C1AB58C /* BodyPilotApp.swift in Sources */,
+				403E542330499C7C007A3D21 /* SleepModels.swift in Sources */,
 				40E93690303D89D300D883D6 /* CoachView.swift in Sources */,
+				40E64DDC3043F26500B17109 /* LifeStatus.swift in Sources */,
+				405E9E323049D86100437EDE /* UserDataView.swift in Sources */,
 				40E93665303D894900D883D6 /* DomainTypes.swift in Sources */,
+				403E542930499CAA007A3D21 /* SleepModel.swift in Sources */,
+				40E64DE63043F2C200B17109 /* CorridorEngine.swift in Sources */,
 				40CB8EEE303EBB3E001F01B0 /* InsightContextBuilder.swift in Sources */,
+				40E64E013043F6FE00B17109 /* RecapSection.swift in Sources */,
 				40E93703303DB34500D883D6 /* AIContextBuilder.swift in Sources */,
 				40CB8EE8303EBA96001F01B0 /* InsightActionEngine.swift in Sources */,
+				40E64DDF3043F26600B17109 /* CorridorModels.swift in Sources */,
 				40E936BF303D9F9500D883D6 /* HealthPermissions.swift in Sources */,
+				405E9E363049D88300437EDE /* HeartRateZonesView.swift in Sources */,
 				40E936DA303DAB1700D883D6 /* CheckInSheet.swift in Sources */,
+				40E64DFC3043F5C200B17109 /* HealthWorkoutJournalView.swift in Sources */,
 				40E936FE303DB32A00D883D6 /* CoachProfiles.swift in Sources */,
 				40718C97303ECD5A00770E67 /* InsightCoachModel.swift in Sources */,
 				40CB8F01303EC3D8001F01B0 /* InsightPreviewFixtures.swift in Sources */,
+				403E542B30499CAA007A3D21 /* SleepView.swift in Sources */,
+				40E64DEF3043F3E500B17109 /* PathModel.swift in Sources */,
 				40E9371D303DB7E200D883D6 /* GetTodayReadinessIntent.swift in Sources */,
 				40E9366B303D896200D883D6 /* UserProfile.swift in Sources */,
 				40E93694303D89D800D883D6 /* ProgressTabView.swift in Sources */,
 				40E936D6303DAAFC00D883D6 /* RecommendationEngine.swift in Sources */,
 				40E93683303D897800D883D6 /* DesignSystem.swift in Sources */,
 				40E9371F303DB7E500D883D6 /* LogFeelingIntent.swift in Sources */,
+				40E64DF33043F40C00B17109 /* CorridorChart.swift in Sources */,
 				40E93700303DB32F00D883D6 /* SafetyGate.swift in Sources */,
+				405E9E383049D8C300437EDE /* HeartRateZoneEngine.swift in Sources */,
 				40E93674303D896900D883D6 /* CoachPreference.swift in Sources */,
 				40E9370F303DB37000D883D6 /* CoachModel.swift in Sources */,
 				40E936C5303D9FBD00D883D6 /* BaselineEngine.swift in Sources */,
@@ -1025,14 +1167,18 @@
 				40CB8F05303EC673001F01B0 /* InsightsHubSection.swift in Sources */,
 				40E93718303DB7A000D883D6 /* ReadinessService.swift in Sources */,
 				40E9367A303D896E00D883D6 /* BodyPilotModelContainer.swift in Sources */,
+				40E64DF73043F48600B17109 /* InsightsTabView.swift in Sources */,
 				40CB8EFD303EC3A6001F01B0 /* InsightStyle.swift in Sources */,
 				40E93672303D896600D883D6 /* GeneratedWorkout.swift in Sources */,
 				40E936EC303DADBD00D883D6 /* WorkoutDetailView.swift in Sources */,
 				40CB8EFF303EC3C5001F01B0 /* InsightDetailView.swift in Sources */,
+				405E9E343049D87100437EDE /* PersonalDetailsView.swift in Sources */,
+				4054F7F4304A9BDC00DE042A /* MovementPathHero.swift in Sources */,
 				40E93723303DB7F100D883D6 /* BodyPilotShortcuts.swift in Sources */,
 				40E93721303DB7EC00D883D6 /* CreateQuickWorkoutIntent.swift in Sources */,
 				40E93668303D895200D883D6 /* ReadinessModels.swift in Sources */,
 				40E93726303DB80500D883D6 /* NotificationService.swift in Sources */,
+				40E64DF93043F56D00B17109 /* WorkoutJournalEntry.swift in Sources */,
 				40718CB5303ECE0C00770E67 /* WidgetSnapshotStore.swift in Sources */,
 				40E93686303D898700D883D6 /* MainTabView.swift in Sources */,
 				40E9366E303D896400D883D6 /* CheckIn.swift in Sources */,

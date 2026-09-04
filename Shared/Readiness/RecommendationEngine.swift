@@ -8,13 +8,32 @@ struct RecommendationInput: Sendable {
     let equipment: [EquipmentType]
     let soreness: [SorenessArea]
     let feeling: FeelingLevel?
+    let corridorDay: CorridorDay?
+
+    nonisolated init(
+        scoreResult: BodyScoreResult,
+        preferredActivities: [ActivityType],
+        preferredWorkoutMinutes: Int,
+        equipment: [EquipmentType],
+        soreness: [SorenessArea],
+        feeling: FeelingLevel?,
+        corridorDay: CorridorDay? = nil
+    ) {
+        self.scoreResult = scoreResult
+        self.preferredActivities = preferredActivities
+        self.preferredWorkoutMinutes = preferredWorkoutMinutes
+        self.equipment = equipment
+        self.soreness = soreness
+        self.feeling = feeling
+        self.corridorDay = corridorDay
+    }
 }
 
 /// Deterministic daily recommendation per PRD 7.2/7.6.
 /// AI may rephrase the result but must never override its constraints.
 struct RecommendationEngine: Sendable {
     func recommendation(for input: RecommendationInput) -> DailyRecommendation {
-        let level = input.scoreResult.readiness
+        let level = readinessLevel(for: input)
         let intensity = cappedIntensity(base: baseIntensity(for: level), input: input)
         let duration = durationRange(for: level, preferredMinutes: input.preferredWorkoutMinutes)
         let activities = activities(for: level, preferred: input.preferredActivities)
@@ -42,6 +61,20 @@ struct RecommendationEngine: Sendable {
     }
 
     // MARK: - Intensity
+
+    private func readinessLevel(for input: RecommendationInput) -> ReadinessLevel {
+        guard let corridorDay = input.corridorDay else {
+            return input.scoreResult.readiness
+        }
+        if corridorDay.isRestRecommended {
+            return .recover
+        }
+        return switch corridorDay.state {
+        case .above: .recover
+        case .inside: .ready
+        case .below: .strong
+        }
+    }
 
     private func baseIntensity(for level: ReadinessLevel) -> WorkoutIntensity {
         switch level {

@@ -33,7 +33,15 @@ struct InsightsHubSection: View {
 
     @ViewBuilder
     private func destination(for insight: InsightSnapshot) -> some View {
-        if insight.kind == .workoutHistory {
+        if insight.kind == .sleep {
+            SleepView()
+        } else if insight.kind == .heart, let cardioFitness = insight.cardioFitness {
+            CardioFitnessView(
+                statusLabel: insight.statusLabel,
+                summary: insight.summary,
+                data: cardioFitness
+            )
+        } else if insight.kind == .workoutHistory {
             WorkoutJourneyView(snapshot: insight, workouts: workouts, onAction: onAction)
         } else {
             InsightDetailView(snapshot: insight, onAction: onAction)

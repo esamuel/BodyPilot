@@ -6,6 +6,7 @@ import UIKit
 /// Premium, state-driven onboarding that persists into the existing profile model.
 struct OnboardingView: View {
     private enum Step: Int, CaseIterable {
+        case intro
         case name
         case welcome
         case meetBodyPilot
@@ -23,7 +24,7 @@ struct OnboardingView: View {
     @Query private var profiles: [UserProfile]
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
-    @State private var step: Step = .name
+    @State private var step: Step = .intro
     @State private var name = ""
     @State private var selectedGoals: Set<OnboardingGoal> = []
     @State private var healthAccess = HealthAccessModel()
@@ -52,12 +53,80 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            if step == .welcome {
+            if step == .intro {
+                IntroOnboardingScreen(onStart: advance)
+                    .transition(pageTransition)
+            } else if step == .welcome {
                 fullBleedWelcomeScreen
                     .transition(pageTransition)
             } else if step == .name {
                 fullBleedNameScreen
                     .transition(pageTransition)
+            } else if step == .meetBodyPilot {
+                MeetBodyPilotScreen(
+                    onBack: goBack,
+                    onNext: advance
+                )
+                .transition(pageTransition)
+            } else if step == .goals {
+                GoalsOnboardingScreen(
+                    selectedGoals: selectedGoals,
+                    onToggle: toggleGoal,
+                    onBack: goBack
+                ) {
+                    saveDraft()
+                    advance()
+                }
+                .transition(pageTransition)
+            } else if step == .healthAccess {
+                HealthAccessOnboardingScreen(
+                    connectionState: healthAccess.state,
+                    isWorking: isWorking,
+                    onBack: goBack,
+                    onWhyWeAsk: { legalDocument = .health },
+                    onContinue: connectHealthAndContinue
+                )
+                .transition(pageTransition)
+            } else if step == .appleWatch {
+                AppleWatchOnboardingScreen(
+                    onBack: goBack,
+                    onContinue: advance
+                )
+                .transition(pageTransition)
+            } else if step == .notifications {
+                RemindersOnboardingScreen(
+                    isWorking: isWorking,
+                    onBack: goBack,
+                    onSkip: advance,
+                    onEnable: enableNotificationsAndContinue
+                )
+                .transition(pageTransition)
+            } else if step == .coach {
+                CoachOnboardingScreen(
+                    onBack: goBack,
+                    onContinue: advance
+                )
+                .transition(pageTransition)
+            } else if step == .ready {
+                ReadyOnboardingScreen(
+                    name: trimmedName,
+                    onBack: goBack,
+                    onContinue: advance
+                )
+                .transition(pageTransition)
+            } else if step == .premium {
+                PremiumOnboardingScreen(
+                    name: trimmedName,
+                    priceText: featuredProduct?.displayPrice,
+                    savingsPercentage: annualSavingsPercentage,
+                    hasMultiplePlans: store.products.count > 1,
+                    isLoading: store.isLoading || isWorking,
+                    onClose: finish,
+                    onPrimaryAction: premiumPrimaryAction,
+                    onMoreOptions: { showsMorePlans = true },
+                    onRestore: restorePurchases
+                )
+                .transition(pageTransition)
             } else {
                 standardOnboardingFlow
                     .transition(pageTransition)
@@ -75,6 +144,14 @@ struct OnboardingView: View {
         }
         .sheet(item: $legalDocument) { document in
             OnboardingLegalView(document: document)
+        }
+        .sheet(isPresented: $showsMorePlans) {
+            PremiumPlanOptionsView(
+                products: store.products,
+                isWorking: isWorking,
+                onSelect: purchase,
+                onRestore: restorePurchases
+            )
         }
     }
 
@@ -187,9 +264,7 @@ struct OnboardingView: View {
                             .lineSpacing(3)
 
                         VStack(alignment: .leading, spacing: BPSpacing.small) {
-                            Text("Your name")
-                                .font(.headline)
-                            TextField("Your name", text: $name)
+                            TextField("Enter your name", text: $name)
                                 .textContentType(.name)
                                 .textInputAutocapitalization(.words)
                                 .autocorrectionDisabled()
@@ -203,6 +278,7 @@ struct OnboardingView: View {
                                     RoundedRectangle(cornerRadius: BPCornerRadius.control)
                                         .stroke(.black.opacity(0.2), lineWidth: 1)
                                 }
+                                .accessibilityLabel("Your name")
                             Text("You can change this later.")
                                 .font(.footnote)
                                 .foregroundStyle(BodyPilotColors.secondaryText)
@@ -246,309 +322,12 @@ struct OnboardingView: View {
     @ViewBuilder
     private var stepContent: some View {
         switch step {
-        case .welcome:
-            welcomeScreen
-        case .meetBodyPilot:
-            meetScreen
-        case .name:
-            nameScreen
-        case .goals:
-            goalsScreen
-        case .healthAccess:
-            healthScreen
-        case .appleWatch:
-            watchScreen
-        case .notifications:
-            notificationsScreen
-        case .coach:
-            coachScreen
-        case .ready:
-            readyScreen
-        case .premium:
-            premiumScreen
+        case .intro, .name, .welcome, .meetBodyPilot, .goals, .healthAccess, .appleWatch, .notifications, .coach, .ready, .premium:
+            EmptyView()
         }
     }
 
-    private var welcomeScreen: some View {
-        OnboardingPage(
-            artwork: BodyPilotAsset.onboardingWelcome,
-            fallbackSystemImage: "figure.walk.motion",
-            title: "Let’s get to know each other!",
-            message: "I’m BodyPilot — your daily guide to movement, recovery and wellbeing."
-        )
-    }
-
-    private var meetScreen: some View {
-        VStack(spacing: BPSpacing.large) {
-            OnboardingPage(
-                artwork: BodyPilotAsset.onboardingMeet,
-                fallbackSystemImage: "heart.text.square.fill",
-                title: "Meet BodyPilot.",
-                message: "Your personal guide for movement, recovery and everyday wellbeing."
-            )
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 92))], spacing: BPSpacing.small) {
-                FeaturePill(title: "Sleep", systemImage: "moon.zzz.fill")
-                FeaturePill(title: "Steps", systemImage: "figure.walk")
-                FeaturePill(title: "Heart", systemImage: "heart.fill")
-                FeaturePill(title: "Workouts", systemImage: "figure.run")
-                FeaturePill(title: "Recovery", systemImage: "waveform.path.ecg")
-            }
-        }
-    }
-
-    private var nameScreen: some View {
-        VStack(alignment: .leading, spacing: BPSpacing.large) {
-            OnboardingPage(
-                artwork: BodyPilotAsset.onboardingName,
-                fallbackSystemImage: "person.crop.circle.fill",
-                kicker: "First, let’s make this personal.",
-                title: "What should I call you?",
-                message: "I’ll use your name to personalize your daily guidance and encouragement.",
-                alignment: .leading
-            )
-
-            VStack(alignment: .leading, spacing: BPSpacing.small) {
-                Text("Your name")
-                    .font(.headline)
-                TextField("Your name", text: $name)
-                    .textContentType(.name)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .submitLabel(.continue)
-                    .focused($isNameFocused)
-                    .onSubmit(continueFromName)
-                    .font(.title3)
-                    .padding(BPSpacing.medium)
-                    .background(BodyPilotColors.card, in: .rect(cornerRadius: BPCornerRadius.control))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: BPCornerRadius.control)
-                            .stroke(BodyPilotColors.sleepLavender, lineWidth: 1)
-                    }
-                Text("You can change this later.")
-                    .font(.footnote)
-                    .foregroundStyle(BodyPilotColors.secondaryText)
-            }
-        }
-        .onAppear {
-            isNameFocused = name.isEmpty
-        }
-    }
-
-    private var goalsScreen: some View {
-        VStack(alignment: .leading, spacing: BPSpacing.large) {
-            OnboardingPage(
-                artwork: BodyPilotAsset.onboardingLearn,
-                fallbackSystemImage: "sparkles",
-                kicker: "Now for the important part.",
-                title: "Let’s learn about you.",
-                message: "Tell me your goals, routine and pace so I can guide you better.",
-                alignment: .leading
-            )
-
-            VStack(spacing: BPSpacing.small) {
-                ForEach(OnboardingGoal.allCases, id: \.self) { goal in
-                    GoalSelectionCard(
-                        goal: goal,
-                        isSelected: selectedGoals.contains(goal)
-                    ) {
-                        toggleGoal(goal)
-                    }
-                }
-            }
-        }
-    }
-
-    private var healthScreen: some View {
-        VStack(alignment: .leading, spacing: BPSpacing.large) {
-            OnboardingPage(
-                artwork: BodyPilotAsset.onboardingHealth,
-                fallbackSystemImage: "heart.text.square.fill",
-                title: "Connect Apple Health",
-                message: "With your permission, BodyPilot can read the signals it needs to build more accurate guidance.",
-                alignment: .leading
-            )
-
-            VStack(spacing: BPSpacing.small) {
-                HealthCategoryRow(title: "Sleep", systemImage: "moon.zzz.fill")
-                HealthCategoryRow(title: "Steps", systemImage: "figure.walk")
-                HealthCategoryRow(title: "Heart Rate", systemImage: "heart.fill")
-                HealthCategoryRow(title: "Workouts", systemImage: "figure.run")
-            }
-
-            healthStatus
-
-            Button("Why we ask", systemImage: "info.circle") {
-                legalDocument = .health
-            }
-            .frame(minHeight: 44)
-        }
-    }
-
-    @ViewBuilder
-    private var healthStatus: some View {
-        switch healthAccess.state {
-        case .checking:
-            Label("Checking Apple Health…", systemImage: "ellipsis.circle")
-                .foregroundStyle(BodyPilotColors.secondaryText)
-        case .connected:
-            Label("Apple Health is connected", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(BodyPilotColors.successGreen)
-        case .needsRequest:
-            Label("You’ll choose what BodyPilot can read on the next screen.", systemImage: "hand.raised.fill")
-                .foregroundStyle(BodyPilotColors.secondaryText)
-        case .unavailable:
-            Label("Apple Health isn’t available on this device. You can still continue.", systemImage: "exclamationmark.circle")
-                .foregroundStyle(BodyPilotColors.secondaryText)
-        case .failed:
-            Label("Apple Health couldn’t be connected. You can try again later.", systemImage: "exclamationmark.circle")
-                .foregroundStyle(BodyPilotColors.secondaryText)
-        }
-    }
-
-    private var watchScreen: some View {
-        OnboardingPage(
-            artwork: BodyPilotAsset.onboardingWatch,
-            fallbackSystemImage: "applewatch",
-            title: "Works beautifully with Apple Watch.",
-            message: "BodyPilot uses your watch activity, heart and workout signals to understand your day."
-        )
-    }
-
-    private var notificationsScreen: some View {
-        OnboardingPage(
-            artwork: BodyPilotAsset.onboardingReminders,
-            fallbackSystemImage: "bell.badge.fill",
-            title: "Keep your momentum.",
-            message: "Helpful reminders keep your routine alive — and nudge you when your body is ready."
-        )
-    }
-
-    private var coachScreen: some View {
-        VStack(spacing: BPSpacing.large) {
-            OnboardingPage(
-                artwork: BodyPilotAsset.onboardingCoach,
-                fallbackSystemImage: "bubble.left.and.text.bubble.right.fill",
-                title: "Ask BodyPilot anything.",
-                message: "Get simple coaching based on how you feel, your activity and your recovery."
-            )
-
-            VStack(spacing: BPSpacing.small) {
-                ConversationBubble(
-                    text: "Create me a 10-minute workout.",
-                    isUser: true
-                )
-                ConversationBubble(
-                    text: "You’re good for a short walk or gentle mobility session today.",
-                    isUser: false
-                )
-            }
-        }
-    }
-
-    private var readyScreen: some View {
-        VStack(alignment: .leading, spacing: BPSpacing.large) {
-            OnboardingPage(
-                artwork: BodyPilotAsset.onboardingReady,
-                fallbackSystemImage: "checkmark.seal.fill",
-                title: "Your BodyPilot is ready, \(trimmedName).",
-                message: "I’ve prepared your daily guidance and I’m ready to help you move, recover and feel better.",
-                alignment: .leading
-            )
-
-            VStack(spacing: BPSpacing.small) {
-                ReadyChecklistRow(title: "Understanding your activity patterns")
-                ReadyChecklistRow(title: "Reviewing sleep and recovery")
-                ReadyChecklistRow(title: "Preparing today’s recommendations")
-            }
-        }
-    }
-
-    private var premiumScreen: some View {
-        VStack(alignment: .leading, spacing: BPSpacing.large) {
-            OnboardingArtwork(
-                assetName: BodyPilotAsset.onboardingPremium,
-                fallbackSystemImage: "crown.fill"
-            )
-
-            VStack(alignment: .leading, spacing: BPSpacing.small) {
-                Text("BodyPilot Premium")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(BodyPilotColors.accentOrange)
-                Text("Just for you, \(trimmedName)")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(BodyPilotColors.primaryText)
-                if let savings = annualSavingsText {
-                    Text(savings)
-                        .font(.headline)
-                        .foregroundStyle(BodyPilotColors.accentOrange)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(BodyPilotColors.warmGlow, in: .capsule)
-                }
-                Text("Unlock the full power of BodyPilot guidance.")
-                    .font(.title3)
-                    .foregroundStyle(BodyPilotColors.secondaryText)
-            }
-
-            VStack(spacing: BPSpacing.medium) {
-                PremiumBenefit(
-                    title: "Move consistently, not constantly",
-                    message: "Smart, adaptive recommendations that adjust to your energy, schedule, and goals.",
-                    systemImage: "figure.walk.motion"
-                )
-                PremiumBenefit(
-                    title: "Track sleep, health & activity in one place",
-                    message: "Heart rate, steps, sleep, workouts and more — all synced and simple to understand.",
-                    systemImage: "heart.text.square.fill"
-                )
-                PremiumBenefit(
-                    title: "Personalized recovery and readiness insights",
-                    message: "Know when to push, when to rest, and how to build long-term strength and balance.",
-                    systemImage: "chart.line.uptrend.xyaxis"
-                )
-            }
-
-            if showsMorePlans {
-                VStack(spacing: BPSpacing.small) {
-                    ForEach(store.products, id: \.id) { product in
-                        Button {
-                            purchase(product)
-                        } label: {
-                            HStack {
-                                Text(product.displayName)
-                                Spacer()
-                                Text(product.displayPrice)
-                                    .foregroundStyle(BodyPilotColors.secondaryText)
-                            }
-                            .padding(BPSpacing.medium)
-                            .background(BodyPilotColors.card, in: .rect(cornerRadius: BPCornerRadius.control))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isWorking)
-                    }
-                }
-            }
-
-            HStack {
-                Button("Restore Purchases") {
-                    restorePurchases()
-                }
-                Spacer()
-                Button("Terms") {
-                    legalDocument = .terms
-                }
-                Button("Privacy") {
-                    legalDocument = .privacy
-                }
-            }
-            .font(.footnote)
-            .buttonStyle(.plain)
-            .foregroundStyle(BodyPilotColors.secondaryText)
-        }
-    }
-
-    private var annualSavingsText: String? {
+    private var annualSavingsPercentage: Int? {
         guard
             let yearly = store.products.first(where: { $0.id.localizedCaseInsensitiveContains("year") }),
             let monthly = store.products.first(where: { $0.id.localizedCaseInsensitiveContains("month") })
@@ -562,12 +341,14 @@ struct OnboardingView: View {
         let yearlyValue = NSDecimalNumber(decimal: yearly.price).doubleValue
         let monthlyValue = NSDecimalNumber(decimal: annualMonthlyPrice).doubleValue
         let savings = Int(((1 - yearlyValue / monthlyValue) * 100).rounded())
-        return "Save \(savings)% with the yearly plan"
+        return savings
     }
 
     @ViewBuilder
     private var controls: some View {
         switch step {
+        case .intro:
+            OnboardingPrimaryButton(title: "Tap to Start", action: advance)
         case .welcome:
             OnboardingPrimaryButton(title: "Go for it", action: advance)
         case .meetBodyPilot:
@@ -674,6 +455,14 @@ struct OnboardingView: View {
         }
     }
 
+    private func premiumPrimaryAction() {
+        guard let featuredProduct else {
+            finish()
+            return
+        }
+        purchase(featuredProduct)
+    }
+
     private func purchase(_ product: Product) {
         guard !isWorking else { return }
         isWorking = true
@@ -734,7 +523,9 @@ struct OnboardingView: View {
         profile.onboardingGoals = orderedGoals
         profile.goal = mappedFitnessGoal(from: orderedGoals)
         profile.preferredActivities = mappedActivities(from: orderedGoals)
-        profile.hasCompletedOnboarding = completed
+        // Never downgrade a completed profile: replaying onboarding from Me would
+        // otherwise flip MainTabView.needsOnboarding and stack a second flow.
+        profile.hasCompletedOnboarding = profile.hasCompletedOnboarding || completed
         try? modelContext.save()
     }
 
@@ -760,6 +551,866 @@ struct OnboardingView: View {
             activities.append(.recovery)
         }
         return activities.isEmpty ? [.walking] : activities
+    }
+}
+
+private struct ReadyOnboardingScreen: View {
+    let name: String
+    let onBack: () -> Void
+    let onContinue: () -> Void
+
+    private var title: String {
+        name.isEmpty ? "Your BodyPilot is ready." : "Your BodyPilot is ready, \(name)."
+    }
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingReady,
+                fallbackSystemImage: "checkmark.seal.fill"
+            )
+
+            GeometryReader { proxy in
+                VStack(alignment: .leading, spacing: BPSpacing.small) {
+                    VStack(alignment: .leading, spacing: BPSpacing.small) {
+                        Text(title)
+                            .font(.largeTitle.bold())
+                            .foregroundStyle(BodyPilotColors.primaryText)
+                            .accessibilityAddTraits(.isHeader)
+
+                        Text("I’ve prepared your daily guidance and I’m ready to help you move, recover and feel better.")
+                            .font(.title3)
+                            .foregroundStyle(BodyPilotColors.secondaryText)
+                            .lineSpacing(3)
+                    }
+
+                    VStack(spacing: BPSpacing.xSmall) {
+                        ReadyChecklistRow(title: "Understanding your activity patterns")
+                        ReadyChecklistRow(title: "Reviewing sleep and recovery")
+                        ReadyChecklistRow(title: "Preparing today’s recommendations")
+                    }
+
+                    Spacer(minLength: BPSpacing.small)
+
+                    Button(action: onContinue) {
+                        Text("Take Me In")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 58)
+                            .background(.black, in: .capsule)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, BPSpacing.xLarge)
+                .padding(.top, 60)
+                .padding(.bottom, BPSpacing.medium)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .overlay(alignment: .topLeading) {
+                    OnboardingBackControl(action: onBack)
+                        .padding(.leading, BPSpacing.xLarge)
+                        .padding(.top, BPSpacing.small)
+                }
+            }
+        }
+    }
+}
+
+private struct PremiumOnboardingScreen: View {
+    let name: String
+    let priceText: String?
+    let savingsPercentage: Int?
+    let hasMultiplePlans: Bool
+    let isLoading: Bool
+    let onClose: () -> Void
+    let onPrimaryAction: () -> Void
+    let onMoreOptions: () -> Void
+    let onRestore: () -> Void
+
+    private var offerTitle: String {
+        if let savingsPercentage {
+            return "\(savingsPercentage)% OFF"
+        }
+        return priceText == nil ? "Premium preview" : "BodyPilot Premium"
+    }
+
+    private var primaryButtonTitle: String {
+        if priceText == nil {
+            return "Continue into BodyPilot"
+        }
+        if let savingsPercentage {
+            return "Save \(savingsPercentage)% and Start Today"
+        }
+        return "Start Today"
+    }
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingPremium,
+                fallbackSystemImage: "crown.fill"
+            )
+
+            GeometryReader { proxy in
+                VStack(spacing: BPSpacing.xSmall) {
+                    ZStack {
+                        Label("BodyPilot Premium", systemImage: "heart.fill")
+                            .font(.headline)
+                            .foregroundStyle(BodyPilotColors.primaryText)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(BodyPilotColors.accentOrange, BodyPilotColors.primaryText)
+                            .padding(.horizontal, BPSpacing.medium)
+                            .frame(minHeight: 44)
+                            .background(.regularMaterial, in: .capsule)
+
+                        HStack {
+                            Spacer()
+                            Button(action: onClose) {
+                                Image(systemName: "xmark")
+                                    .font(.title2.weight(.medium))
+                                    .foregroundStyle(BodyPilotColors.primaryText)
+                                    .frame(width: 44, height: 44)
+                            }
+                            .accessibilityLabel("Continue without Premium")
+                        }
+                    }
+
+                    Spacer(minLength: max(proxy.size.height * 0.34, 245))
+
+                    VStack(spacing: 2) {
+                        Text(name.isEmpty ? "Just for you" : "Just for you, \(name)")
+                            .font(.subheadline)
+                            .foregroundStyle(BodyPilotColors.secondaryText)
+                        Text(offerTitle)
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .foregroundStyle(BodyPilotColors.primaryText)
+                            .minimumScaleFactor(0.8)
+                        Text("Unlock the full power of BodyPilot guidance.")
+                            .font(.footnote)
+                            .foregroundStyle(BodyPilotColors.secondaryText)
+                    }
+
+                    VStack(spacing: BPSpacing.xSmall) {
+                        PremiumOfferBenefit(title: "Move consistently, not constantly", systemImage: "figure.run", tint: .green)
+                        PremiumOfferBenefit(title: "Track sleep, health & activity in one place", systemImage: "heart.fill", tint: .pink)
+                        PremiumOfferBenefit(title: "Personalized recovery and readiness insights", systemImage: "moon.stars.fill", tint: .indigo)
+                    }
+
+                    VStack(spacing: BPSpacing.xSmall) {
+                        if let priceText {
+                            Text(priceText)
+                                .font(.title2.bold())
+                            Text("Annual plan")
+                                .font(.caption)
+                                .foregroundStyle(BodyPilotColors.secondaryText)
+                        } else {
+                            Text("Purchases coming soon")
+                                .font(.headline)
+                            Text("Continue using the full app while Premium is completed.")
+                                .font(.caption)
+                                .foregroundStyle(BodyPilotColors.secondaryText)
+                        }
+
+                        Button(action: onPrimaryAction) {
+                            ZStack {
+                                Text(primaryButtonTitle)
+                                    .font(.headline)
+                                    .opacity(isLoading ? 0 : 1)
+                                if isLoading {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background(BodyPilotColors.accentOrange, in: .rect(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isLoading)
+
+                        HStack {
+                            Button("Restore purchases", action: onRestore)
+                            Spacer()
+                            if hasMultiplePlans {
+                                Button("More options", action: onMoreOptions)
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(BodyPilotColors.secondaryText)
+                    }
+                    .padding(BPSpacing.small)
+                    .background(.regularMaterial, in: .rect(cornerRadius: 24))
+                }
+                .padding(.horizontal, BPSpacing.large)
+                .padding(.vertical, BPSpacing.small)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+            }
+        }
+    }
+}
+
+private struct PremiumOfferBenefit: View {
+    let title: LocalizedStringResource
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: BPSpacing.small) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 34, height: 34)
+                .background(tint.opacity(0.12), in: .rect(cornerRadius: 10))
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(BodyPilotColors.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct PremiumPlanOptionsView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let products: [Product]
+    let isWorking: Bool
+    let onSelect: (Product) -> Void
+    let onRestore: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List(products, id: \.id) { product in
+                Button {
+                    onSelect(product)
+                } label: {
+                    HStack {
+                        Text(product.displayName)
+                        Spacer()
+                        Text(product.displayPrice)
+                            .foregroundStyle(BodyPilotColors.secondaryText)
+                    }
+                }
+                .disabled(isWorking)
+            }
+            .navigationTitle("Premium options")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Restore", action: onRestore)
+                        .disabled(isWorking)
+                }
+            }
+        }
+    }
+}
+
+private struct RemindersOnboardingScreen: View {
+    let isWorking: Bool
+    let onBack: () -> Void
+    let onSkip: () -> Void
+    let onEnable: () -> Void
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingReminders,
+                fallbackSystemImage: "bell.badge.fill"
+            )
+
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BPSpacing.small) {
+                        VStack(alignment: .leading, spacing: BPSpacing.small) {
+                            Text("Keep your momentum.")
+                                .font(.largeTitle.bold())
+                                .foregroundStyle(BodyPilotColors.primaryText)
+                                .accessibilityAddTraits(.isHeader)
+
+                            Text("Helpful reminders keep your routine alive — and nudge you when your body is ready.")
+                                .font(.title3)
+                                .foregroundStyle(BodyPilotColors.secondaryText)
+                                .lineSpacing(3)
+                        }
+
+                        Spacer(minLength: max(proxy.size.height * 0.58, 420))
+
+                        HStack(spacing: BPSpacing.small) {
+                            Button("Not now", action: onSkip)
+                                .font(.headline)
+                                .foregroundStyle(BodyPilotColors.primaryText)
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .background(.regularMaterial, in: .capsule)
+                                .overlay {
+                                    Capsule()
+                                        .stroke(.black.opacity(0.12), lineWidth: 1)
+                                }
+                                .buttonStyle(.plain)
+
+                            Button(action: onEnable) {
+                                ZStack {
+                                    Text("Turn on reminders")
+                                        .font(.headline)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.78)
+                                        .opacity(isWorking ? 0 : 1)
+
+                                    if isWorking {
+                                        ProgressView()
+                                            .tint(.white)
+                                    }
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .background(.black, in: .capsule)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isWorking)
+                        }
+                    }
+                    .frame(minHeight: max(proxy.size.height - 76, 0), alignment: .top)
+                    .padding(.horizontal, BPSpacing.xLarge)
+                    .padding(.top, 60)
+                    .padding(.bottom, BPSpacing.medium)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .overlay(alignment: .topLeading) {
+                    OnboardingBackControl(action: onBack)
+                        .padding(.leading, BPSpacing.xLarge)
+                        .padding(.top, BPSpacing.small)
+                }
+            }
+        }
+    }
+}
+
+private struct CoachOnboardingScreen: View {
+    let onBack: () -> Void
+    let onContinue: () -> Void
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingCoach,
+                fallbackSystemImage: "bubble.left.and.text.bubble.right.fill"
+            )
+
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BPSpacing.small) {
+                        VStack(alignment: .leading, spacing: BPSpacing.small) {
+                            Text("Ask BodyPilot anything.")
+                                .font(.largeTitle.bold())
+                                .foregroundStyle(BodyPilotColors.primaryText)
+                                .accessibilityAddTraits(.isHeader)
+
+                            Text("Get simple coaching based on how you feel, your activity and your recovery.")
+                                .font(.title3)
+                                .foregroundStyle(BodyPilotColors.secondaryText)
+                                .lineSpacing(3)
+                        }
+
+                        Spacer(minLength: max(proxy.size.height * 0.58, 420))
+
+                        Button(action: onContinue) {
+                            Text("Try Coach")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .background(.black, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(minHeight: max(proxy.size.height - 76, 0), alignment: .top)
+                    .padding(.horizontal, BPSpacing.xLarge)
+                    .padding(.top, 60)
+                    .padding(.bottom, BPSpacing.medium)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .overlay(alignment: .topLeading) {
+                    OnboardingBackControl(action: onBack)
+                        .padding(.leading, BPSpacing.xLarge)
+                        .padding(.top, BPSpacing.small)
+                }
+            }
+        }
+    }
+}
+
+private struct OnboardingBackControl: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.backward")
+                .font(.headline)
+                .foregroundStyle(BodyPilotColors.primaryText)
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: .circle)
+        }
+        .accessibilityLabel("Back")
+    }
+}
+
+private struct AppleWatchOnboardingScreen: View {
+    let onBack: () -> Void
+    let onContinue: () -> Void
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingWatch,
+                fallbackSystemImage: "applewatch"
+            )
+
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BPSpacing.small) {
+                        VStack(alignment: .leading, spacing: BPSpacing.small) {
+                            Text("Works beautifully with Apple Watch.")
+                                .font(.largeTitle.bold())
+                                .foregroundStyle(BodyPilotColors.primaryText)
+                                .accessibilityAddTraits(.isHeader)
+
+                            Text("BodyPilot uses your watch activity, heart and workout signals to understand your day.")
+                                .font(.title3)
+                                .foregroundStyle(BodyPilotColors.secondaryText)
+                                .lineSpacing(3)
+                        }
+
+                        Spacer(minLength: max(proxy.size.height * 0.55, 400))
+
+                        Button(action: onContinue) {
+                            Text("Great")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .background(.black, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(minHeight: max(proxy.size.height - 76, 0), alignment: .top)
+                    .padding(.horizontal, BPSpacing.xLarge)
+                    .padding(.top, 60)
+                    .padding(.bottom, BPSpacing.medium)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .overlay(alignment: .topLeading) {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.backward")
+                            .font(.headline)
+                            .foregroundStyle(BodyPilotColors.primaryText)
+                            .frame(width: 44, height: 44)
+                            .background(.ultraThinMaterial, in: .circle)
+                    }
+                    .accessibilityLabel("Back")
+                    .padding(.leading, BPSpacing.xLarge)
+                    .padding(.top, BPSpacing.small)
+                }
+            }
+        }
+    }
+}
+
+private struct HealthAccessOnboardingScreen: View {
+    let connectionState: HealthAccessModel.ConnectionState
+    let isWorking: Bool
+    let onBack: () -> Void
+    let onWhyWeAsk: () -> Void
+    let onContinue: () -> Void
+
+    private var primaryButtonTitle: LocalizedStringKey {
+        connectionState == .needsRequest ? "Connect Apple Health" : "Continue"
+    }
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingHealth,
+                fallbackSystemImage: "heart.text.square.fill"
+            )
+
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BPSpacing.small) {
+                        HealthAccessOnboardingHeader()
+
+                        Spacer(minLength: max(proxy.size.height * 0.03, BPSpacing.large))
+
+                        HealthAccessCategoryPanel()
+
+                        Spacer(minLength: BPSpacing.medium)
+
+                        Button("Why we ask", action: onWhyWeAsk)
+                            .font(.body.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+
+                        if connectionState == .connected {
+                            Label("Apple Health is connected", systemImage: "checkmark.circle.fill")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.green)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, BPSpacing.xSmall)
+                        }
+
+                        Button(action: onContinue) {
+                            ZStack {
+                                Text(primaryButtonTitle)
+                                    .font(.headline)
+                                    .opacity(isWorking ? 0 : 1)
+
+                                if isWorking {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 58)
+                            .background(.black, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isWorking)
+                    }
+                    .frame(minHeight: max(proxy.size.height - 76, 0), alignment: .top)
+                    .padding(.horizontal, BPSpacing.xLarge)
+                    .padding(.top, 60)
+                    .padding(.bottom, BPSpacing.medium)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .overlay(alignment: .topLeading) {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.backward")
+                            .font(.headline)
+                            .foregroundStyle(BodyPilotColors.primaryText)
+                            .frame(width: 44, height: 44)
+                            .background(.ultraThinMaterial, in: .circle)
+                    }
+                    .accessibilityLabel("Back")
+                    .padding(.leading, BPSpacing.xLarge)
+                    .padding(.top, BPSpacing.small)
+                }
+            }
+        }
+    }
+}
+
+private struct HealthAccessOnboardingHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: BPSpacing.small) {
+            Text("Connect Apple Health")
+                .font(.largeTitle.bold())
+                .foregroundStyle(BodyPilotColors.primaryText)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("With your permission, BodyPilot can read the signals it needs to build more accurate guidance.")
+                .font(.title3)
+                .foregroundStyle(BodyPilotColors.secondaryText)
+                .lineSpacing(3)
+        }
+    }
+}
+
+private struct HealthAccessCategoryPanel: View {
+    var body: some View {
+        VStack(spacing: BPSpacing.xSmall) {
+            HealthAccessCategoryRow(title: "Sleep", systemImage: "moon.zzz.fill", tint: .indigo)
+            HealthAccessCategoryRow(title: "Steps", systemImage: "shoeprints.fill", tint: .orange)
+            HealthAccessCategoryRow(title: "Heart Rate", systemImage: "heart.fill", tint: .pink)
+            HealthAccessCategoryRow(title: "Workouts", systemImage: "figure.run", tint: .green)
+        }
+        .padding(BPSpacing.small)
+        .padding(.top, 28)
+        .frame(maxWidth: 224)
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 28))
+        .overlay(alignment: .top) {
+            Image(systemName: "heart.fill")
+                .font(.title.weight(.semibold))
+                .foregroundStyle(.pink)
+                .frame(width: 68, height: 68)
+                .background(.regularMaterial, in: .rect(cornerRadius: 20))
+                .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+                .offset(y: -38)
+                .accessibilityHidden(true)
+        }
+        .padding(.top, 38)
+    }
+}
+
+private struct HealthAccessCategoryRow: View {
+    let title: LocalizedStringResource
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: BPSpacing.small) {
+            Image(systemName: systemImage)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 42, height: 42)
+                .background(tint.opacity(0.1), in: .circle)
+
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(BodyPilotColors.primaryText)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, BPSpacing.small)
+        .frame(maxWidth: .infinity, minHeight: 58)
+        .background(.thinMaterial, in: .rect(cornerRadius: 18))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct GoalsOnboardingScreen: View {
+    let selectedGoals: Set<OnboardingGoal>
+    let onToggle: (OnboardingGoal) -> Void
+    let onBack: () -> Void
+    let onContinue: () -> Void
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingLearn,
+                fallbackSystemImage: "sparkles",
+                verticalOffset: 44
+            )
+
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BPSpacing.small) {
+                        GoalsOnboardingHeader()
+                        GoalsSelectionGrid(
+                            selectedGoals: selectedGoals,
+                            onToggle: onToggle
+                        )
+
+                        Spacer(minLength: max(proxy.size.height * 0.2, 160))
+
+                        Button(action: onContinue) {
+                            Text("This is me")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .background(.black, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(selectedGoals.isEmpty)
+                        .opacity(selectedGoals.isEmpty ? 0.5 : 1)
+                    }
+                    .frame(minHeight: max(proxy.size.height - 24, 0), alignment: .top)
+                    .padding(.horizontal, BPSpacing.xLarge)
+                    .padding(.top, BPSpacing.small)
+                    .padding(.bottom, BPSpacing.medium)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+                .overlay(alignment: .topTrailing) {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.backward")
+                            .font(.headline)
+                            .foregroundStyle(BodyPilotColors.primaryText)
+                            .frame(width: 44, height: 44)
+                            .background(.ultraThinMaterial, in: .circle)
+                    }
+                    .accessibilityLabel("Back")
+                    .padding(.top, BPSpacing.small)
+                    .padding(.trailing, BPSpacing.xLarge)
+                }
+            }
+        }
+    }
+}
+
+private struct GoalsOnboardingHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: BPSpacing.small) {
+            Text("Now for the important part.")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(BodyPilotColors.secondaryText)
+
+            Text("Let’s learn about you.")
+                .font(.largeTitle.bold())
+                .foregroundStyle(BodyPilotColors.primaryText)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("Tell me your goals, routine and pace so I can guide you better.")
+                .font(.title3)
+                .foregroundStyle(BodyPilotColors.secondaryText)
+                .lineSpacing(3)
+        }
+    }
+}
+
+private struct GoalsSelectionGrid: View {
+    private let columns = [
+        GridItem(.flexible(), spacing: BPSpacing.small),
+        GridItem(.flexible(), spacing: BPSpacing.small)
+    ]
+
+    let selectedGoals: Set<OnboardingGoal>
+    let onToggle: (OnboardingGoal) -> Void
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: BPSpacing.xSmall) {
+            ForEach(OnboardingGoal.allCases, id: \.self) { goal in
+                GoalsOnboardingCard(
+                    goal: goal,
+                    isSelected: selectedGoals.contains(goal)
+                ) {
+                    onToggle(goal)
+                }
+            }
+        }
+    }
+}
+
+private struct GoalsOnboardingCard: View {
+    let goal: OnboardingGoal
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: BPSpacing.xSmall) {
+                Image(systemName: goal.systemImage)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(goal.tint)
+                    .frame(width: 40, height: 40)
+                    .background(goal.tint.opacity(0.12), in: .circle)
+
+                Text(goal.displayName)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(BodyPilotColors.primaryText)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, BPSpacing.small)
+            .padding(.vertical, BPSpacing.xSmall)
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .background(.ultraThinMaterial, in: .rect(cornerRadius: 20))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        isSelected ? goal.tint : .white.opacity(0.65),
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private struct MeetBodyPilotScreen: View {
+    let onBack: () -> Void
+    let onNext: () -> Void
+
+    var body: some View {
+        ZStack {
+            FullBleedOnboardingArtwork(
+                assetName: BodyPilotAsset.onboardingMeet,
+                fallbackSystemImage: "figure.walk.motion"
+            )
+
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BPSpacing.medium) {
+                        Button(action: onBack) {
+                            Image(systemName: "chevron.backward")
+                                .font(.headline)
+                                .foregroundStyle(BodyPilotColors.primaryText)
+                                .frame(width: 44, height: 44)
+                                .background(.ultraThinMaterial, in: .circle)
+                        }
+                        .accessibilityLabel("Back")
+
+                        MeetBodyPilotHeader()
+                        MeetBodyPilotFeatureStrip()
+
+                        Spacer(minLength: max(proxy.size.height * 0.36, 260))
+
+                        Button(action: onNext) {
+                            Text("Next")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 58)
+                                .background(.black, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(minHeight: max(proxy.size.height - 24, 0), alignment: .top)
+                    .padding(.horizontal, BPSpacing.xLarge)
+                    .padding(.top, BPSpacing.small)
+                    .padding(.bottom, BPSpacing.medium)
+                }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+            }
+        }
+    }
+}
+
+private struct MeetBodyPilotHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: BPSpacing.small) {
+            Text("Meet BodyPilot.")
+                .font(.largeTitle.bold())
+                .foregroundStyle(BodyPilotColors.primaryText)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("Your personal guide for movement, recovery and everyday wellbeing.")
+                .font(.title3)
+                .foregroundStyle(BodyPilotColors.secondaryText)
+                .lineSpacing(3)
+        }
+    }
+}
+
+private struct MeetBodyPilotFeatureStrip: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: BPSpacing.xSmall) {
+            MeetBodyPilotFeature(title: "Sleep", systemImage: "moon.zzz.fill", tint: .indigo)
+            MeetBodyPilotFeature(title: "Steps", systemImage: "figure.walk", tint: .mint)
+            MeetBodyPilotFeature(title: "Heart", systemImage: "heart.fill", tint: .pink)
+            MeetBodyPilotFeature(title: "Workouts", systemImage: "dumbbell.fill", tint: .orange)
+            MeetBodyPilotFeature(title: "Recovery", systemImage: "figure.mind.and.body", tint: .teal)
+        }
+    }
+}
+
+private struct MeetBodyPilotFeature: View {
+    let title: LocalizedStringResource
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: BPSpacing.xSmall) {
+            Image(systemName: systemImage)
+                .font(.title2.weight(.medium))
+                .foregroundStyle(tint)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(.white.opacity(0.7), lineWidth: 1)
+                }
+
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(BodyPilotColors.secondaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -856,26 +1507,33 @@ private struct OnboardingPage: View {
 private struct FullBleedOnboardingArtwork: View {
     let assetName: String
     let fallbackSystemImage: String
+    var verticalOffset: CGFloat = 0
 
     var body: some View {
         GeometryReader { proxy in
-            Group {
-                if UIImage(named: assetName) != nil {
-                    Image(assetName)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    ZStack {
-                        LinearGradient(
-                            colors: [BodyPilotColors.background, BodyPilotColors.warmGlow],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        Image(systemName: fallbackSystemImage)
-                            .font(.system(size: 96, weight: .medium))
-                            .foregroundStyle(BodyPilotColors.sleepIndigo)
+            ZStack {
+                BodyPilotColors.background
+
+                Group {
+                    if UIImage(named: assetName) != nil {
+                        Image(assetName)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        ZStack {
+                            LinearGradient(
+                                colors: [BodyPilotColors.background, BodyPilotColors.warmGlow],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            Image(systemName: fallbackSystemImage)
+                                .font(.system(size: 96, weight: .medium))
+                                .foregroundStyle(BodyPilotColors.sleepIndigo)
+                        }
                     }
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .offset(y: verticalOffset)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
@@ -1090,4 +1748,72 @@ private struct OnboardingLegalView: View {
 #Preview {
     OnboardingView()
         .modelContainer(for: [UserProfile.self, CoachPreference.self], inMemory: true)
+}
+
+#Preview("Meet BodyPilot") {
+    MeetBodyPilotScreen(onBack: {}, onNext: {})
+}
+
+#Preview("Onboarding Goals") {
+    GoalsOnboardingScreen(
+        selectedGoals: [.walkMore, .sleepBetter],
+        onToggle: { _ in },
+        onBack: {},
+        onContinue: {}
+    )
+}
+
+#Preview("Apple Health Onboarding") {
+    HealthAccessOnboardingScreen(
+        connectionState: .needsRequest,
+        isWorking: false,
+        onBack: {},
+        onWhyWeAsk: {},
+        onContinue: {}
+    )
+}
+
+#Preview("Apple Health Onboarding — Connected") {
+    HealthAccessOnboardingScreen(
+        connectionState: .connected,
+        isWorking: false,
+        onBack: {},
+        onWhyWeAsk: {},
+        onContinue: {}
+    )
+}
+
+#Preview("Apple Watch Onboarding") {
+    AppleWatchOnboardingScreen(onBack: {}, onContinue: {})
+}
+
+#Preview("Reminders Onboarding") {
+    RemindersOnboardingScreen(
+        isWorking: false,
+        onBack: {},
+        onSkip: {},
+        onEnable: {}
+    )
+}
+
+#Preview("Coach Onboarding") {
+    CoachOnboardingScreen(onBack: {}, onContinue: {})
+}
+
+#Preview("Ready Onboarding") {
+    ReadyOnboardingScreen(name: "Samuel", onBack: {}, onContinue: {})
+}
+
+#Preview("Premium Onboarding") {
+    PremiumOnboardingScreen(
+        name: "Samuel",
+        priceText: nil,
+        savingsPercentage: nil,
+        hasMultiplePlans: false,
+        isLoading: false,
+        onClose: {},
+        onPrimaryAction: {},
+        onMoreOptions: {},
+        onRestore: {}
+    )
 }

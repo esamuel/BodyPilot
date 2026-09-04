@@ -5,8 +5,11 @@ import SwiftData
 /// activity from Apple Health (including Watch sessions).
 struct WorkoutTabView: View {
     @Query(sort: \GeneratedWorkout.createdAt, order: .reverse) private var workouts: [GeneratedWorkout]
+    @Query private var journalEntries: [WorkoutJournalEntry]
     @State private var history: WorkoutHistoryModel
     @State private var selectedWorkout: GeneratedWorkout?
+    @State private var selectedHealthWorkout: WorkoutSummary?
+    @State private var isCoachPresented = false
 
     init(history: WorkoutHistoryModel = WorkoutHistoryModel()) {
         _history = State(initialValue: history)
@@ -19,7 +22,7 @@ struct WorkoutTabView: View {
                     ContentUnavailableView(
                         "No Workouts Yet",
                         systemImage: "figure.run",
-                        description: Text("Generate today's workout from the Today tab, or start one on your Watch.")
+                        description: Text("Choose today’s workout from Path, or start one on your Watch.")
                     )
                 } else {
                     List {
@@ -37,15 +40,34 @@ struct WorkoutTabView: View {
                         }
                         if !history.recentWorkouts.isEmpty {
                             Section("Recent Activity") {
-                                ForEach(history.recentWorkouts, id: \.self) { summary in
-                                    healthRow(summary)
+                                ForEach(history.recentWorkouts) { summary in
+                                    Button {
+                                        selectedHealthWorkout = summary
+                                    } label: {
+                                        HealthWorkoutRow(
+                                            summary: summary,
+                                            journalEntry: journalEntries.first {
+                                                $0.workoutID == summary.id
+                                            }
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
                     }
                 }
             }
-            .navigationTitle("Workout")
+            .navigationTitle("Workouts")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isCoachPresented = true
+                    } label: {
+                        Label("Ask Coach", systemImage: "bubble.left.and.text.bubble.right")
+                    }
+                }
+            }
             .task {
                 await history.refresh()
             }
@@ -54,6 +76,17 @@ struct WorkoutTabView: View {
             }
             .sheet(item: $selectedWorkout) { workout in
                 WorkoutDetailView(workout: workout)
+            }
+            .sheet(item: $selectedHealthWorkout) { summary in
+                HealthWorkoutJournalView(
+                    summary: summary,
+                    existingEntry: journalEntries.first {
+                        $0.workoutID == summary.id
+                    }
+                )
+            }
+            .sheet(isPresented: $isCoachPresented) {
+                CoachView()
             }
         }
     }
@@ -77,25 +110,43 @@ struct WorkoutTabView: View {
         .padding(.vertical, BPSpacing.xSmall)
     }
 
-    private func healthRow(_ summary: WorkoutSummary) -> some View {
+}
+
+private struct HealthWorkoutRow: View {
+    let summary: WorkoutSummary
+    let journalEntry: WorkoutJournalEntry?
+
+    var body: some View {
         HStack(spacing: BPSpacing.medium) {
             VStack(alignment: .leading, spacing: BPSpacing.xSmall) {
-                if let activity = summary.activity {
+                if let customName = journalEntry?.customName {
+                    Text(customName)
+                        .font(.body.weight(.medium))
+                } else if let activity = summary.activity {
                     Text(activity.displayName)
                         .font(.body.weight(.medium))
                 } else {
                     Text("Workout")
                         .font(.body.weight(.medium))
                 }
-                Text(summary.start.formatted(date: .abbreviated, time: .shortened))
+                Text(summary.start, format: .dateTime.day().month().year().hour().minute())
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: BPSpacing.xSmall) {
+                if journalEntry?.isFavorite == true {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(BodyPilotColors.warningOrange)
+                        .accessibilityLabel("Favorite")
+                }
                 Text("\(Int(summary.durationMinutes.rounded())) min")
                     .font(.subheadline)
-                if let energy = summary.totalEnergyKilocalories {
+                if let effort = journalEntry?.perceivedExertion {
+                    Text("RPE \(effort)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else if let energy = summary.totalEnergyKilocalories {
                     Text("\(Int(energy.rounded())) kcal")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -108,5 +159,5 @@ struct WorkoutTabView: View {
 
 #Preview {
     WorkoutTabView(history: WorkoutHistoryModel(healthMetrics: MockHealthProvider()))
-        .modelContainer(for: GeneratedWorkout.self, inMemory: true)
+        .modelContainer(for: [GeneratedWorkout.self, WorkoutJournalEntry.self], inMemory: true)
 }

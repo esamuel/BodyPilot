@@ -12,6 +12,7 @@ struct BodyScoreInput: Sendable {
 
 /// Deterministic Body Score calculation per PRD 7.3.
 /// AI never computes or overrides this score.
+/// Legacy compatibility engine. New user-facing readiness uses CorridorEngine.
 struct BodyScoreEngine: Sendable {
     let weights: BodyScoreWeights
 
